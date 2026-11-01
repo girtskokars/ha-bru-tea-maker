@@ -1,0 +1,31 @@
+{
+  "entity": {
+    "button": {
+      "start_brew": {
+        "default": "mdi:tea"
+      },
+      "sync_presets": {
+        "default": "mdi:file-document-refresh"
+      }
+    },
+    "number": {
+      "temperature": {
+        "default": "mdi:thermometer-water"
+      },
+      "water_amount": {
+        "default": "mdi:beaker"
+      },
+      "brew_time": {
+        "default": "mdi:timer-sand"
+      }
+    },
+    "sensor": {
+      "status": {
+        "default": "mdi:message-check"
+      },
+      "message": {
+        "default": "mdi:message-alert"
+      }
+    }
+  }
+}
