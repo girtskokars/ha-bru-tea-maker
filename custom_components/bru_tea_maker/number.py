@@ -1,6 +1,9 @@
 """Brew settings for the BRU Tea Maker integration."""
 
+from math import floor
+
 from homeassistant.components.number import (
+    NumberDeviceClass,
     NumberEntityDescription,
     NumberMode,
     RestoreNumber,
@@ -15,6 +18,7 @@ from .entity import BruEntity
 NUMBERS = (
     NumberEntityDescription(
         key="temperature",
+        device_class=NumberDeviceClass.TEMPERATURE,
         native_min_value=40,
         native_max_value=100,
         native_step=5,
@@ -22,6 +26,7 @@ NUMBERS = (
     ),
     NumberEntityDescription(
         key="water_amount",
+        device_class=NumberDeviceClass.VOLUME,
         native_min_value=50,
         native_max_value=500,
         native_step=50,
@@ -29,6 +34,7 @@ NUMBERS = (
     ),
     NumberEntityDescription(
         key="brew_time",
+        device_class=NumberDeviceClass.DURATION,
         native_min_value=10,
         native_max_value=600,
         native_step=10,
@@ -72,5 +78,15 @@ class BruNumber(BruEntity, RestoreNumber):
         return self.coordinator.settings[self._key]
 
     async def async_set_native_value(self, value: float) -> None:
-        """Change the setting."""
-        self.coordinator.async_set_setting(self._key, int(value))
+        """Change the setting.
+
+        With a device class, a value entered in another unit comes back
+        converted and rarely lands on one of the tea maker's steps. BRU only
+        takes whole steps, so use the nearest one inside the range.
+        """
+        minimum = self.native_min_value
+        step = self.native_step or 1
+        steps = floor((value - minimum) / step + 0.5)
+        snapped = minimum + steps * step
+        snapped = min(max(snapped, minimum), self.native_max_value)
+        self.coordinator.async_set_setting(self._key, int(snapped))
