@@ -99,6 +99,11 @@ not show the code; you only accept it on the tea maker's screen.
 
 Tested with ESPHome 2026.9.
 
+## Protocol notes
+
+How the integration talks to the tea maker, including differences between
+firmware versions, is described in [protocol.md](protocol.md).
+
 ## Disclaimer
 
 This is an unofficial integration and is not affiliated with BRU. It was built

@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import (
     AWAKE_UPDATE_INTERVAL,
+    BREW_NAME,
     COMMAND_UUID,
     DEFAULT_SETTINGS,
     DOMAIN,
@@ -34,6 +35,7 @@ from .protocol import (
     parse_preset,
     parse_preset_count,
     parse_status,
+    start_accepted,
     start_brew_payload,
 )
 
@@ -44,6 +46,11 @@ _CONNECT_TIMEOUT = 90
 _ENCRYPT_TIMEOUT = 20
 # BRU answers within about 100 ms.
 _REPLY_TIMEOUT = 3
+# One slow or lost pairing attempt is not a missing bond: a link that drops
+# mid-attempt can cut one short. Only this many failures in a row are taken to
+# mean the bond is gone.
+_PAIR_FAILURES_BEFORE_REAUTH = 3
+_PAIR_FAILURES_KEY = f"{DOMAIN}_pair_failures"
 
 type BruConfigEntry = ConfigEntry[BruCoordinator]
 
@@ -71,6 +78,21 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         self._reply: tuple[int, asyncio.Future[bytes]] | None = None
         self._missed_poll = False
 
+    @property
+    def _pair_failures(self) -> int:
+        """Pairing failures in a row, kept across setup retries.
+
+        Setup builds a new coordinator on every retry, so the count lives in
+        ``hass.data`` for three failures in a row to add up.
+        """
+        failures = self.hass.data.get(_PAIR_FAILURES_KEY, {})
+        return failures.get(self.config_entry.entry_id, 0)
+
+    @_pair_failures.setter
+    def _pair_failures(self, value: int) -> None:
+        failures = self.hass.data.setdefault(_PAIR_FAILURES_KEY, {})
+        failures[self.config_entry.entry_id] = value
+
     @callback
     def async_set_setting(self, key: str, value: int) -> None:
         """Change one setting for the next brew."""
@@ -89,10 +111,22 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
     async def async_start_brew(self) -> None:
         """Start a brew with the current settings."""
         try:
-            await self._request(OP_START_BREW, start_brew_payload(**self.settings))
-        except (BleakError, TimeoutError) as err:
+            try:
+                accepted = await self._start_brew(BREW_NAME)
+            except TimeoutError:
+                accepted = False
+            if not accepted:
+                # Older firmware refuses, or does not answer, the longer frame.
+                accepted = await self._start_brew(None)
+        except (BleakError, TimeoutError, ValueError) as err:
             raise HomeAssistantError(f"Could not start the brew: {err!r}") from err
+        if not accepted:
+            raise HomeAssistantError("The tea maker refused to start the brew")
         await self.async_request_refresh()
+
+    async def _start_brew(self, name: str | None) -> bool:
+        payload = start_brew_payload(**self.settings, name=name)
+        return start_accepted(await self._request(OP_START_BREW, payload))
 
     async def async_sync_presets(self) -> None:
         """Read the presets from the tea maker."""
@@ -159,10 +193,25 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         except (BleakError, TimeoutError) as err:
             if isinstance(err, BleakError) and not client.is_connected:
                 raise
+            await self._disconnect()
+            self._pair_failures += 1
+            LOGGER.warning(
+                "Pairing attempt %d of %d failed: %r. If it keeps failing, "
+                "the tea maker has probably lost its pairing: put it in "
+                "pairing mode and pair it again from the integration's page",
+                self._pair_failures,
+                _PAIR_FAILURES_BEFORE_REAUTH,
+                err,
+            )
+            if self._pair_failures < _PAIR_FAILURES_BEFORE_REAUTH:
+                raise UpdateFailed(
+                    f"Pairing attempt {self._pair_failures} failed: {err!r}"
+                ) from err
             # Retrying cannot fix a missing bond, and every failed attempt
             # makes BRU refuse new ones for about five minutes.
-            await self._disconnect()
+            self._pair_failures = 0
             raise ConfigEntryAuthFailed("The BRU tea maker is not paired") from err
+        self._pair_failures = 0
         async with asyncio.timeout(_ENCRYPT_TIMEOUT):
             await client.start_notify(STATUS_UUID, self._on_notify)
         try:
