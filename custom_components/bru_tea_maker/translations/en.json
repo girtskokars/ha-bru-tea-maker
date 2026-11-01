@@ -37,7 +37,7 @@
   "entity": {
     "button": {
       "start_brew": {
-        "name": "Start brew"
+        "name": "Start"
       },
       "sync_presets": {
         "name": "Sync presets"
@@ -48,10 +48,10 @@
         "name": "Temperature"
       },
       "water_amount": {
-        "name": "Water amount"
+        "name": "Volume"
       },
       "brew_time": {
-        "name": "Brew time"
+        "name": "Duration"
       }
     },
     "select": {
@@ -92,7 +92,7 @@
         }
       },
       "message": {
-        "name": "Message",
+        "name": "Alert",
         "state": {
           "none": "None",
           "place_cup": "Place cup",
@@ -108,7 +108,7 @@
           "next_cup": "Next cup",
           "cup_removed": "Cup removed",
           "place_descaling": "Place descaling container",
-          "check_engine": "Check engine"
+          "check_engine": "Check motor"
         }
       }
     }
