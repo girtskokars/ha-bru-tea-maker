@@ -1,19 +1,25 @@
 {
   "domain": "bru_tea_maker",
   "name": "BRU Tea Maker",
-  "version": "1.0.0",
-  "codeowners": ["@girtskokars"],
-  "config_flow": true,
-  "documentation": "https://github.com/girtskokars/ha-bru-tea-maker",
-  "issue_tracker": "https://github.com/girtskokars/ha-bru-tea-maker/issues",
-  "integration_type": "device",
-  "iot_class": "local_polling",
-  "dependencies": ["bluetooth_adapters"],
-  "requirements": ["bleak-retry-connector>=3.0.0"],
   "bluetooth": [
     {
       "local_name": "BRU*",
       "connectable": true
     }
-  ]
+  ],
+  "codeowners": [
+    "@girtskokars"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "bluetooth_adapters"
+  ],
+  "documentation": "https://github.com/girtskokars/ha-bru-tea-maker",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/girtskokars/ha-bru-tea-maker/issues",
+  "requirements": [
+    "bleak-retry-connector>=3.0.0"
+  ],
+  "version": "1.0.0"
 }
