@@ -21,7 +21,6 @@ from .const import (
     STANDBY_UPDATE_INTERVAL,
     STATUS_UUID,
 )
-from .pairing import async_ensure_pairing_agent
 from .protocol import (
     OP_PRESET,
     OP_SETUP,
@@ -142,7 +141,6 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         )
         if ble_device is None:
             raise UpdateFailed("The BRU tea maker is not in Bluetooth range")
-        await async_ensure_pairing_agent()
         async with asyncio.timeout(_CONNECT_TIMEOUT):
             client = await establish_connection(
                 BleakClientWithServiceCache,
