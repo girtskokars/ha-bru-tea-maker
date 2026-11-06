@@ -1,0 +1,15 @@
+# Pins Home Assistant 2026.10.4, the oldest release hacs.json supports.
+pytest-homeassistant-custom-component==0.13.375
+mypy==2.4.1
+ruff==0.17.4
+# Requirements of the bluetooth and usb components in Home Assistant 2026.10.4,
+# which the test package does not install.
+aiousbwatcher==1.1.2
+bleak==3.0.2
+bleak-retry-connector==4.7.1
+bluetooth-adapters==2.4.0
+bluetooth-auto-recovery==1.6.4
+bluetooth-data-tools==1.29.24
+dbus-fast==5.0.22
+habluetooth==7.1.2
+serialx==1.11.0

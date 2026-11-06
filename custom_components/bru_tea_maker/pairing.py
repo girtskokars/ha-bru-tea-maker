@@ -138,7 +138,9 @@ async def async_ensure_pairing_agent() -> None:
             ).call_get_managed_objects()
             for path, interfaces in objects.items():
                 if "org.bluez.Adapter1" in interfaces:
-                    properties = await interface(path, "org.freedesktop.DBus.Properties")
+                    properties = await interface(
+                        path, "org.freedesktop.DBus.Properties"
+                    )
                     await properties.call_set(
                         "org.bluez.Adapter1", "Pairable", Variant("b", True)
                     )
