@@ -57,7 +57,7 @@
   "entity": {
     "button": {
       "start_brew": {
-        "name": "Start brew"
+        "name": "Brew"
       },
       "sync_presets": {
         "name": "Sync presets"
@@ -65,23 +65,25 @@
     },
     "number": {
       "temperature": {
-        "name": "Temperature"
+        "name": "Water temperature"
       },
       "water_amount": {
-        "name": "Water amount"
+        "name": "Water quantity"
       },
       "brew_time": {
-        "name": "Brew time"
+        "name": "Steeping time"
       }
     },
     "select": {
       "preset": {
-        "name": "Preset"
+        "name": "Preset",
+        "state": {
+          "custom": "Custom"
+        }
       }
     },
     "sensor": {
       "status": {
-        "name": "Status",
         "state": {
           "standby": "Standby",
           "function_menu": "Ready",
@@ -89,7 +91,7 @@
           "brewing": "Brewing",
           "dispensing": "Dispensing",
           "alarm_timer": "Timer",
-          "cold_tea": "Cold tea",
+          "cold_tea": "Cool down",
           "split_cup": "Split cup",
           "multi_steeping": "Multi-steeping",
           "info_message": "Showing a message",
@@ -101,7 +103,7 @@
           "descaling": "Descaling",
           "lid_reminder": "Lid reminder",
           "bluetooth_menu": "In Bluetooth menu",
-          "filling": "Filling",
+          "filling": "Filling up",
           "steeping": "Steeping",
           "rinse_delay": "Waiting to rinse",
           "serving": "Serving",
@@ -112,7 +114,7 @@
         }
       },
       "message": {
-        "name": "Message",
+        "name": "Display message",
         "state": {
           "none": "None",
           "place_cup": "Place cup",
@@ -120,7 +122,7 @@
           "close_lid": "Close lid",
           "open_lid": "Open lid",
           "add_water": "Add water",
-          "insert_chamber": "Insert chamber",
+          "insert_chamber": "Place chamber",
           "no_nozzle": "Nozzle missing",
           "error": "Error",
           "continue": "Continue",

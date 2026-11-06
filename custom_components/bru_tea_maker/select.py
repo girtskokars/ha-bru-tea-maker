@@ -8,6 +8,9 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .coordinator import BruConfigEntry
 from .entity import BruEntity
 
+# Shown while the brew settings do not come from one of the presets.
+PRESET_CUSTOM = "custom"
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -30,14 +33,15 @@ class BruPresetSelect(BruEntity, SelectEntity, RestoreEntity):
 
     @property
     def options(self) -> list[str]:
-        """Return the presets, in the tea maker's order."""
-        return list(self.coordinator.presets)
+        """Return the presets, in the tea maker's order, then "custom"."""
+        return [*self.coordinator.presets, PRESET_CUSTOM]
 
     @property
-    def current_option(self) -> str | None:
+    def current_option(self) -> str:
         """Return the preset the brew settings were copied from."""
-        return self.coordinator.preset
+        return self.coordinator.preset or PRESET_CUSTOM
 
     async def async_select_option(self, option: str) -> None:
-        """Copy a preset into the brew settings."""
-        self.coordinator.async_select_preset(option)
+        """Copy a preset into the brew settings; "custom" changes nothing."""
+        if option != PRESET_CUSTOM:
+            self.coordinator.async_select_preset(option)

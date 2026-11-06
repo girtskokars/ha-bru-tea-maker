@@ -1,0 +1,51 @@
+{
+  "entity": {
+    "button": {
+      "start_brew": {
+        "default": "mdi:tea"
+      },
+      "sync_presets": {
+        "default": "mdi:sync"
+      }
+    },
+    "number": {
+      "temperature": {
+        "default": "mdi:thermometer-water"
+      },
+      "water_amount": {
+        "default": "mdi:cup-water"
+      },
+      "brew_time": {
+        "default": "mdi:timer-sand"
+      }
+    },
+    "select": {
+      "preset": {
+        "default": "mdi:format-list-bulleted"
+      }
+    },
+    "sensor": {
+      "status": {
+        "default": "mdi:kettle",
+        "state": {
+          "standby": "mdi:power-sleep",
+          "filling": "mdi:water-plus",
+          "steeping": "mdi:tea",
+          "serving": "mdi:cup",
+          "enjoy": "mdi:cup-outline",
+          "descaling": "mdi:water-sync",
+          "error_message": "mdi:alert-circle",
+          "warning_message": "mdi:alert"
+        }
+      },
+      "message": {
+        "default": "mdi:message-alert",
+        "state": {
+          "none": "mdi:message-outline",
+          "add_water": "mdi:water-alert",
+          "place_cup": "mdi:cup-off"
+        }
+      }
+    }
+  }
+}

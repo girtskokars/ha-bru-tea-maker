@@ -36,8 +36,12 @@ class BruSensor(BruEntity, SensorEntity):
     ) -> None:
         super().__init__(coordinator, key)
         self._attr_options = options
+        if key == "status":
+            # The tea maker's main state: shown with the device name alone.
+            self._attr_name = None
 
     @property
     def native_value(self) -> str | None:
         """Return the current state."""
-        return getattr(self.coordinator.data, self._key)
+        value: str | None = getattr(self.coordinator.data, self._key)
+        return value

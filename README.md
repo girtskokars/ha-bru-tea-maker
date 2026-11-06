@@ -48,14 +48,17 @@ Pairing is only needed once.
 
 | Entity | Type | What it does |
 | --- | --- | --- |
-| Status | Sensor | What the tea maker is doing: standby, filling, steeping, serving, and so on. |
-| Message | Sensor | The prompt on the tea maker's screen, such as "Place cup" or "Add water". |
-| Temperature | Number | Water temperature for the next brew: 40–100 °C, in steps of 5. |
-| Water amount | Number | Amount of water for the next brew: 50–500 ml, in steps of 50. |
-| Brew time | Number | Steeping time for the next brew: 10–600 seconds, in steps of 10. |
-| Preset | Select | Copies one of the tea maker's own presets into the three settings above. |
-| Start brew | Button | Starts a brew with the current settings. |
+| *(device name)* | Sensor | What the tea maker is doing: standby, filling, steeping, serving, and so on. It is the device's main entity, so it is shown with the device name alone. |
+| Display message | Sensor | The message on the tea maker's display, such as "Place cup" or "Add water". |
+| Water temperature | Number | Water temperature for the next brew: 40–100 °C, in steps of 5. The lowest setting, 40 °C, is what the tea maker shows as **Cold**: the water is not heated. |
+| Water quantity | Number | Amount of water for the next brew: 50–500 ml, in steps of 50. |
+| Steeping time | Number | Steeping time for the next brew: 10–600 seconds, in steps of 10. |
+| Preset | Select | Copies one of the tea maker's own presets into the three settings above. Shows **Custom** once a setting is changed by hand. |
+| Brew | Button | Starts a brew with the current settings. |
 | Sync presets | Button | Reads the presets from the tea maker again, after you change them on the machine. |
+
+The brew settings live in Home Assistant, so they can be changed even while
+the tea maker is out of range.
 
 ## Troubleshooting
 

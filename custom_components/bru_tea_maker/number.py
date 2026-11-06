@@ -53,6 +53,11 @@ class BruNumber(BruEntity, RestoreNumber):
 
     _attr_mode = NumberMode.BOX
 
+    @property
+    def available(self) -> bool:
+        """The setting lives in Home Assistant, so it is always available."""
+        return True
+
     def __init__(
         self, coordinator: BruCoordinator, description: NumberEntityDescription
     ) -> None:
