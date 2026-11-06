@@ -3,34 +3,54 @@
     "step": {
       "user": {
         "title": "Set up a BRU tea maker",
-        "description": "Put the tea maker in **pairing mode**, then select it below.",
+        "description": "On the tea maker, open **Machine setup → Pair new device**. Then select it below.",
         "data": {
           "address": "Device"
         }
       },
       "bluetooth_confirm": {
         "title": "Set up {name}",
-        "description": "Do you want to set up **{name}**?\n\nPut the tea maker in **pairing mode** before you continue."
+        "description": "Set up **{name}**?\n\nOn the tea maker, open **Machine setup → Pair new device**. Then press **Submit**."
       },
       "reauth_confirm": {
         "title": "Pair {name} again",
-        "description": "Home Assistant has no working pairing with **{name}**.\n\nPut the tea maker in **pairing mode** before you continue."
+        "description": "**{name}** needs to be paired again.\n\nOn the tea maker, open **Machine setup → Pair new device**. Then press **Submit**."
       },
       "confirm_code": {
         "title": "Confirm the pairing code",
-        "description": "The tea maker should now be showing this code:\n\n## {code}\n\n1. Check that the code on the tea maker matches.\n2. Accept it **on the tea maker's screen**.\n3. Press **Submit** here."
+        "description": "The tea maker should now be showing this code:\n\n## {code}\n\n1. Check that the code on the tea maker matches.\n2. Accept it **on the tea maker's screen**.\n3. Press **Submit** here.\n\nDo both within about 30 seconds of the code appearing."
+      },
+      "proxy_info": {
+        "title": "Reached through a Bluetooth proxy",
+        "description": "Home Assistant reaches **{name}** through the Bluetooth proxy **{proxy}**. A standard ESPHome proxy cannot pair with the tea maker.\n\nIf you have not done so yet, add this to the proxy's ESPHome configuration and install it:\n\n```yaml\nesp32_ble:\n  io_capability: keyboard_display\n  auth_req_mode: sc_mitm_bond\n  max_connections: 4\n\nble_client:\n  - mac_address: {address}\n    id: bru\n    auto_connect: false\n    on_numeric_comparison_request:\n      then:\n        - ble_client.numeric_comparison_reply:\n            id: bru\n            accept: true\n```\n\nSee the [README]({docs_url}) for details. When the proxy is ready: on the tea maker, open **Machine setup → Pair new device**. Then press **Submit**."
+      },
+      "locked_out": {
+        "title": "Try again",
+        "description": "The tea maker may refuse new attempts for a few minutes. If this one fails too, wait about {minutes} min.\n\nOn the tea maker, open **Machine setup → Pair new device**. Then press **Submit**."
+      },
+      "pair_failed": {
+        "title": "Pairing failed",
+        "description": "On the tea maker, open **Machine setup → Pair new device**. Then press **Submit** to try again."
       }
     },
     "progress": {
-      "pairing": "Connecting to **{name}**…\n\nIf a 6-digit code appears on the tea maker's screen, accept it there.",
-      "waiting_for_device": "Waiting for the code to be accepted on **{name}**…"
+      "pairing": "Connecting to **{name}**…\n\nWhen a code appears on the tea maker, press **yes** there.",
+      "waiting_for_device": "Waiting for **{name}** to accept the code…"
+    },
+    "error": {
+      "cannot_connect": "Could not connect to the tea maker. Make sure it is on and nearby, and that the BRU app is not connected to it.",
+      "no_connection_slots": "The Bluetooth adapter has no free connections. Disconnect another Bluetooth device and try again.",
+      "pair_timeout": "The code was not confirmed in time.",
+      "pair_timeout_proxy": "The code was not confirmed in time. If no code appeared, set up the proxy as described in the README: {docs_url}",
+      "pair_rejected": "The tea maker did not accept the pairing.",
+      "pair_rejected_proxy": "The tea maker did not accept the pairing. If no code appeared, set up the proxy as described in the README: {docs_url}",
+      "pairing_failed": "Pairing failed."
     },
     "abort": {
       "no_devices_found": "No unconfigured BRU tea makers found.",
       "already_configured": "Device is already configured",
       "already_in_progress": "Setup of this tea maker is already in progress.",
       "cannot_connect": "The tea maker is not in Bluetooth range of Home Assistant.",
-      "pairing_failed": "Pairing failed.\n\nMake sure the tea maker is in **pairing mode** and that the code is accepted on its screen. After a failed attempt the tea maker refuses new ones for about five minutes.",
       "reauth_successful": "The tea maker is paired again."
     }
   },

@@ -34,13 +34,13 @@ account is involved.
 
 [![Add the integration to Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=bru_tea_maker)
 
-1. Put the tea maker in pairing mode from its Bluetooth menu.
+1. On the tea maker, open **Machine setup → Pair new device** and press the
+   main button. Bluetooth must be on (**Machine setup → Bluetooth**).
 2. In Home Assistant, go to **Settings → Devices & services**. The tea maker is
    usually discovered on its own; otherwise choose **Add integration** and
    search for **BRU Tea Maker**.
 3. Home Assistant shows a 6-digit code, and the tea maker shows the same one.
-   Accept the code on the tea maker's screen, then press **Submit** in Home
-   Assistant.
+   Press **yes** on the tea maker, then **Submit** in Home Assistant.
 
 Pairing is only needed once.
 
@@ -59,9 +59,9 @@ Pairing is only needed once.
 
 ## Troubleshooting
 
-- **Pairing failed.** Check that the tea maker is in pairing mode, then wait
-  about five minutes before trying again. The tea maker refuses new attempts
-  for a while after a failed one.
+- **Pairing failed.** The setup dialog says what went wrong and lets you try
+  again. After a failed attempt the tea maker may refuse new ones for a few
+  minutes; the dialog then suggests how long to wait.
 - **The tea maker is not found.** Move it within Bluetooth range of Home
   Assistant.
 - **Home Assistant asks you to pair again.** The pairing was lost. Follow the
@@ -95,7 +95,12 @@ ble_client:
 ```
 
 The proxy then confirms the code on its own. During setup Home Assistant does
-not show the code; you only accept it on the tea maker's screen.
+not show the code; you only accept it on the tea maker's screen. When the tea
+maker is reached through a proxy, the setup dialog shows this configuration
+with the tea maker's address already filled in.
+
+To find the address otherwise: the **Add integration** device list shows it,
+as `BRU… (AA:BB:CC:DD:EE:FF)`.
 
 Tested with ESPHome 2026.9.
 
