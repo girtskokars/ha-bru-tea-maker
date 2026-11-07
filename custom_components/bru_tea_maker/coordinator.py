@@ -1,6 +1,7 @@
 """Connection to, and state of, a BRU tea maker."""
 
 import asyncio
+from collections import deque
 from collections.abc import Mapping
 
 from bleak.exc import BleakError
@@ -15,19 +16,25 @@ from homeassistant.exceptions import (
     HomeAssistantError,
     ServiceValidationError,
 )
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 from homeassistant.util.hass_dict import HassKey
 
 from .const import (
     ATTENTION_MESSAGES,
     AWAKE_UPDATE_INTERVAL,
     BREW_NAME,
+    BREW_PHASES,
     BUSY_STATUSES,
     COMMAND_UUID,
     DEFAULT_SETTINGS,
     DOMAIN,
+    FIRMWARE_UUID,
+    HARDWARE_UUID,
     LOGGER,
     STANDBY_UPDATE_INTERVAL,
+    STATUS_BREWING,
     STATUS_UUID,
 )
 from .protocol import (
@@ -64,6 +71,8 @@ _DISCONNECT_TIMEOUT = 15
 # mean the bond is gone.
 _PAIR_FAILURES_BEFORE_REAUTH = 3
 _PAIR_FAILURES_KEY: HassKey[dict[str, int]] = HassKey(f"{DOMAIN}_pair_failures")
+# Commands and replies kept for the diagnostics.
+_FRAME_HISTORY = 50
 
 type BruConfigEntry = ConfigEntry[BruCoordinator]
 
@@ -90,6 +99,11 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         self._request_lock = asyncio.Lock()
         self._reply: tuple[int, asyncio.Future[bytes]] | None = None
         self._missed_poll = False
+        self.firmware: str | None = None
+        self.hardware: str | None = None
+        self.frames: deque[str] = deque(maxlen=_FRAME_HISTORY)
+        self.last_status_frame: bytes | None = None
+        self._unknown_statuses: set[tuple[int, int]] = set()
 
     @property
     def _pair_failures(self) -> int:
@@ -207,7 +221,12 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
             raise UpdateFailed(
                 translation_domain=DOMAIN, translation_key="connection_lost"
             ) from err
+        self.last_status_frame = frame
         self._missed_poll = False
+        if status.status is None or (
+            status.code == STATUS_BREWING and status.sub_code not in BREW_PHASES
+        ):
+            self._log_unknown_status(status)
         self.update_interval = (
             AWAKE_UPDATE_INTERVAL if status.awake else STANDBY_UPDATE_INTERVAL
         )
@@ -258,6 +277,7 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         self._pair_failures = 0
         async with asyncio.timeout(_ENCRYPT_TIMEOUT):
             await client.start_notify(STATUS_UUID, self._on_notify)
+        await self._read_device_information(client)
         try:
             await self._read_presets()
         except (TimeoutError, ValueError) as err:
@@ -273,6 +293,48 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
                 await client.disconnect()
         except (BleakError, TimeoutError) as err:
             LOGGER.debug("Disconnect did not complete: %r", err)
+
+    async def _read_device_information(
+        self, client: BleakClientWithServiceCache
+    ) -> None:
+        """Read the firmware and hardware versions once per connection."""
+        values: list[str | None] = []
+        for uuid in (FIRMWARE_UUID, HARDWARE_UUID):
+            try:
+                async with asyncio.timeout(_REPLY_TIMEOUT):
+                    raw = await client.read_gatt_char(uuid)
+            except (BleakError, TimeoutError) as err:
+                LOGGER.debug("Could not read %s: %r", uuid, err)
+                values.append(None)
+                continue
+            values.append(bytes(raw).decode("ascii", errors="replace").strip() or None)
+        self.firmware, self.hardware = values
+        registry = dr.async_get(self.hass)
+        device = registry.async_get_device_by_identifier(
+            (DOMAIN, self.address), self.config_entry.entry_id
+        )
+        if device is not None and (
+            device.sw_version != self.firmware or device.hw_version != self.hardware
+        ):
+            registry.async_update_device(
+                device.id, sw_version=self.firmware, hw_version=self.hardware
+            )
+
+    def _log_unknown_status(self, status: BruStatus) -> None:
+        key = (status.code, status.sub_code)
+        if key in self._unknown_statuses:
+            return
+        self._unknown_statuses.add(key)
+        LOGGER.info(
+            "Unknown status %s/%s from the tea maker; please report it with the "
+            "diagnostics",
+            *key,
+        )
+
+    def _record(self, direction: str, frame: bytes) -> None:
+        """Keep ``frame`` for the diagnostics."""
+        time = dt_util.utcnow().isoformat(timespec="milliseconds")
+        self.frames.append(f"{time} {direction} {frame.hex()}")
 
     async def _read_presets(self) -> None:
         count = parse_preset_count(await self._request(OP_SETUP))
@@ -292,6 +354,8 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
             assert self._client is not None
             command = build_frame(opcode, payload)
             LOGGER.debug("Sending %s", command.hex())
+            if opcode != OP_STATUS:
+                self._record(">", command)
             reply: asyncio.Future[bytes] = self.hass.loop.create_future()
             self._reply = (opcode + 1, reply)
             try:
@@ -306,7 +370,12 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
     def _on_notify(self, _sender: object, data: bytearray) -> None:
         frame = bytes(data)
         LOGGER.debug("Received %s", frame.hex())
-        if self._reply is None or not is_valid_frame(frame):
+        if not is_valid_frame(frame):
+            return
+        # Status replies repeat every poll; keep only the ones that change.
+        if frame[2] != OP_STATUS + 1 or frame != self.last_status_frame:
+            self._record("<", frame)
+        if self._reply is None:
             return
         opcode, reply = self._reply
         if frame[2] == opcode and not reply.done():

@@ -24,4 +24,6 @@ class BruEntity(CoordinatorEntity[BruCoordinator]):
             manufacturer="BRU",
             model="BRU Maker One",
             model_id="BRU 100",
+            sw_version=coordinator.firmware,
+            hw_version=coordinator.hardware,
         )

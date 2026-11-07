@@ -9,7 +9,7 @@ from bleak.backends.scanner import AdvertisementData
 from bleak.exc import BleakError
 import pytest
 
-from custom_components.bru_tea_maker.const import DOMAIN
+from custom_components.bru_tea_maker.const import DOMAIN, FIRMWARE_UUID, HARDWARE_UUID
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
@@ -90,6 +90,7 @@ class FakeBru:
         self.connected = True
         self.reachable = True
         self.start_frames = {SHORT_START}
+        self.device_information = {FIRMWARE_UUID: b"061026-1", HARDWARE_UUID: b"V1.0.1"}
         self.pair_error: BaseException | None = None
         self._notify: Callable[[Any, bytearray], None] | None = None
 
@@ -109,6 +110,11 @@ class FakeBru:
 
     async def disconnect(self) -> None:
         self.connected = False
+
+    async def read_gatt_char(self, uuid: str) -> bytearray:
+        if uuid not in self.device_information:
+            raise BleakError(f"No characteristic {uuid}")
+        return bytearray(self.device_information[uuid])
 
     async def write_gatt_char(
         self, _uuid: str, data: bytes, response: bool = False

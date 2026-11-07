@@ -44,6 +44,8 @@ class BruStatus:
     status: str | None
     message: str
     awake: bool
+    code: int
+    sub_code: int
 
 
 @dataclass(frozen=True)
@@ -139,6 +141,8 @@ def parse_status(frame: bytes) -> BruStatus:
         status=status,
         message=MESSAGES.get(sub_code, MESSAGE_NONE),
         awake=code != STATUS_STANDBY,
+        code=code,
+        sub_code=sub_code,
     )
 
 

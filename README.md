@@ -61,6 +61,8 @@ The brew settings live in Home Assistant, so they can be changed even while
 the tea maker is out of range. A value between steps, such as 92 °C, is
 rounded to the nearest one the tea maker accepts.
 
+The device page shows the tea maker's firmware version.
+
 ## Actions
 
 **BRU Tea Maker: Brew** (`bru_tea_maker.brew`) starts a brew in one step,
@@ -99,6 +101,10 @@ automation:
   Assistant.
 - **Home Assistant asks you to pair again.** The pairing was lost. Follow the
   prompt and pair as you did during setup.
+- **Reporting a problem.** On the device page, choose **Download
+  diagnostics** and attach the file to the issue. It contains the recent
+  messages to and from the tea maker and its firmware version, but not its
+  Bluetooth address.
 
 ## ESPHome Bluetooth proxy
 

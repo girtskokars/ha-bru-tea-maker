@@ -8,6 +8,9 @@ LOGGER = logging.getLogger(__package__)
 
 STATUS_UUID = "aae28f01-71b5-42a1-8c3c-f9cf6ac969d0"
 COMMAND_UUID = "aae28f02-71b5-42a1-8c3c-f9cf6ac969d0"
+# Standard Device Information characteristics, such as "061026-1" and "V1.0.1".
+FIRMWARE_UUID = "00002a26-0000-1000-8000-00805f9b34fb"
+HARDWARE_UUID = "00002a27-0000-1000-8000-00805f9b34fb"
 
 # BRU only reports its status when asked. Its prompts (place cup, add water)
 # come and go within seconds, so it is asked more often while awake.
