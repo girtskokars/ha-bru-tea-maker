@@ -80,7 +80,7 @@ class BruConfigFlow(ConfigFlow, domain=DOMAIN):
         self._discovered = {
             info.address: info.name
             for info in async_discovered_service_info(self.hass, connectable=True)
-            if info.name.startswith("BRU") and info.address not in configured
+            if info.name.startswith("BRU.M") and info.address not in configured
         }
         if not self._discovered:
             return self.async_abort(reason="no_devices_found")

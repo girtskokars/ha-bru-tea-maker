@@ -170,6 +170,17 @@ async def test_no_devices(hass: HomeAssistant) -> None:
     assert result["reason"] == "no_devices_found"
 
 
+async def test_update_mode_is_not_offered(hass: HomeAssistant) -> None:
+    """The address a tea maker uses while updating its firmware is skipped."""
+    update_mode = service_info(name="BRU_U", address="F4:14:14:22:E7:40")
+    with patch(f"{FLOW}.async_discovered_service_info", return_value=[update_mode]):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_USER}
+        )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "no_devices_found"
+
+
 @pytest.mark.parametrize(
     ("error", "reason"),
     [

@@ -54,11 +54,11 @@ def ble_device() -> BLEDevice:
     return BLEDevice(ADDRESS, NAME, {})
 
 
-def service_info() -> BluetoothServiceInfoBleak:
+def service_info(name: str = NAME, address: str = ADDRESS) -> BluetoothServiceInfoBleak:
     """Return an advertisement from the tea maker."""
     return BluetoothServiceInfoBleak(
-        name=NAME,
-        address=ADDRESS,
+        name=name,
+        address=address,
         rssi=-60,
         manufacturer_data={},
         service_data={},
@@ -66,7 +66,7 @@ def service_info() -> BluetoothServiceInfoBleak:
         source="00:00:00:00:00:01",
         device=ble_device(),
         advertisement=AdvertisementData(
-            local_name=NAME,
+            local_name=name,
             manufacturer_data={},
             service_data={},
             service_uuids=[],

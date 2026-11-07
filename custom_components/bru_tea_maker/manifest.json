@@ -3,7 +3,7 @@
   "name": "BRU Tea Maker",
   "bluetooth": [
     {
-      "local_name": "BRU*",
+      "local_name": "BRU.M*",
       "connectable": true
     }
   ],
