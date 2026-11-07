@@ -103,6 +103,9 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         self._reply: tuple[int, asyncio.Future[bytes]] | None = None
         self._missed_poll = False
         self._presets_missing = False
+        # Set once the bond is gone: Home Assistant stops polling then, and an
+        # advertisement must not start pairing attempts either.
+        self._auth_failed = False
         self.firmware: str | None = None
         self.hardware: str | None = None
         self.serial_number: str | None = None
@@ -255,6 +258,7 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
                 BleakClientWithServiceCache,
                 ble_device,
                 ble_device.name or self.address,
+                disconnected_callback=self._on_disconnected,
                 use_services_cache=False,
             )
         self._client = client
@@ -292,6 +296,7 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
             # Retrying cannot fix a missing bond, and every failed attempt
             # makes BRU refuse new ones for about five minutes.
             self._pair_failures = 0
+            self._auth_failed = True
             raise ConfigEntryAuthFailed(
                 translation_domain=DOMAIN, translation_key="not_paired"
             ) from err
@@ -304,6 +309,43 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         except (TimeoutError, ValueError) as err:
             LOGGER.debug("Reading the presets failed, retrying on next poll: %r", err)
             self._presets_missing = True
+
+    @callback
+    def _on_disconnected(self, client: BleakClientWithServiceCache) -> None:
+        """Show the tea maker as unavailable as soon as the link drops.
+
+        Then reconnect at once rather than at the next poll. Refreshes take
+        turns, so this waits for a poll the drop has just failed.
+        """
+        if client is not self._client:
+            return  # Our own _disconnect(), or a client from before.
+        LOGGER.debug("The tea maker disconnected")
+        self._client = None
+        self._missed_poll = False
+        if self._reply is not None and not self._reply[1].done():
+            # Not a lost reply worth waiting out: there is no link left.
+            self._reply[1].set_exception(BleakError("The tea maker disconnected"))
+        self.update_interval = STANDBY_UPDATE_INTERVAL
+        self.async_set_update_error(
+            UpdateFailed(translation_domain=DOMAIN, translation_key="connection_lost")
+        )
+        self.config_entry.async_create_task(
+            self.hass, self.async_refresh(), "bru_tea_maker reconnect"
+        )
+
+    @callback
+    def async_on_advertisement(
+        self,
+        _service_info: bluetooth.BluetoothServiceInfoBleak,
+        _change: bluetooth.BluetoothChange,
+    ) -> None:
+        """Reconnect as soon as the tea maker is heard from again."""
+        if self.connected or self.last_update_success or self._auth_failed:
+            return
+        # The debouncer turns a burst of advertisements into one refresh.
+        self.config_entry.async_create_task(
+            self.hass, self.async_request_refresh(), "bru_tea_maker reconnect"
+        )
 
     async def _disconnect(self) -> None:
         self._missed_poll = False

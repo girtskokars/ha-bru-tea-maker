@@ -108,6 +108,8 @@ class FakeBru:
         self.presets = dict(PRESET_REPLIES)
         self.device_information = {FIRMWARE_UUID: b"061026-1", HARDWARE_UUID: b"V1.0.1"}
         self.pair_error: BaseException | None = None
+        self.drop_on_status = False
+        self.disconnected_callback: Callable[[Any], None] | None = None
         self._notify: Callable[[Any, bytearray], None] | None = None
 
     @property
@@ -125,7 +127,13 @@ class FakeBru:
         self._notify = callback
 
     async def disconnect(self) -> None:
+        self.drop()
+
+    def drop(self) -> None:
+        """Lose the link; bleak reports this however it was ended."""
         self.connected = False
+        if self.disconnected_callback is not None:
+            self.disconnected_callback(self)
 
     async def read_gatt_char(self, uuid: str) -> bytearray:
         if uuid not in self.device_information:
@@ -136,6 +144,9 @@ class FakeBru:
         self, _uuid: str, data: bytes, response: bool = False
     ) -> None:
         self.written.append(bytes(data))
+        if self.drop_on_status and data[2] == 0x44:
+            self.drop()
+            return
         if (reply := self.reply(bytes(data))) is not None and self._notify:
             self._notify(None, bytearray(reply))
 
@@ -159,10 +170,11 @@ def fake_bru() -> Generator[FakeBru]:
     """Connect the coordinator to a fake tea maker."""
     bru = FakeBru()
 
-    async def connect(*_args: Any, **_kwargs: Any) -> FakeBru:
+    async def connect(*_args: Any, **kwargs: Any) -> FakeBru:
         if not bru.reachable:
             raise BleakError("The tea maker is out of range")
         bru.connected = True
+        bru.disconnected_callback = kwargs.get("disconnected_callback")
         return bru
 
     with (

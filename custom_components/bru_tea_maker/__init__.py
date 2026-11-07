@@ -1,5 +1,6 @@
 """The BRU Tea Maker integration."""
 
+from homeassistant.components import bluetooth
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
@@ -40,6 +41,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: BruConfigEntry) -> bool:
 
     entry.async_on_unload(
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_stop)
+    )
+    # Not used to mark the tea maker unavailable: it may stop advertising
+    # while it is connected.
+    entry.async_on_unload(
+        bluetooth.async_register_callback(
+            hass,
+            coordinator.async_on_advertisement,
+            bluetooth.BluetoothCallbackMatcher(
+                address=coordinator.address, connectable=True
+            ),
+            bluetooth.BluetoothScanningMode.ACTIVE,
+        )
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
