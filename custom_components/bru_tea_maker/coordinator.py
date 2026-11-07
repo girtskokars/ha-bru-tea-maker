@@ -11,6 +11,7 @@ from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util.hass_dict import HassKey
 
 from .const import (
     AWAKE_UPDATE_INTERVAL,
@@ -49,7 +50,7 @@ _REPLY_TIMEOUT = 3
 # mid-attempt can cut one short. Only this many failures in a row are taken to
 # mean the bond is gone.
 _PAIR_FAILURES_BEFORE_REAUTH = 3
-_PAIR_FAILURES_KEY = f"{DOMAIN}_pair_failures"
+_PAIR_FAILURES_KEY: HassKey[dict[str, int]] = HassKey(f"{DOMAIN}_pair_failures")
 
 type BruConfigEntry = ConfigEntry[BruCoordinator]
 

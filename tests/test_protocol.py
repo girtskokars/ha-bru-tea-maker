@@ -9,6 +9,7 @@ from custom_components.bru_tea_maker.const import (
     STATUS_NAMES,
 )
 from custom_components.bru_tea_maker.protocol import (
+    OP_PRESET,
     OP_START_BREW,
     OP_STATUS,
     BruPreset,
@@ -17,10 +18,18 @@ from custom_components.bru_tea_maker.protocol import (
     parse_preset,
     parse_preset_count,
     parse_status,
+    start_accepted,
     start_brew_payload,
 )
 
-from .conftest import PRESET_REPLIES, SETUP_REPLY, STATUS_MENU, STATUS_STANDBY
+from .conftest import (
+    PRESET_REPLIES,
+    SETUP_REPLY,
+    START_ACCEPTED,
+    START_REFUSED,
+    STATUS_MENU,
+    STATUS_STANDBY,
+)
 
 
 def test_build_frame_matches_captured_commands() -> None:
@@ -128,3 +137,35 @@ def test_start_payload_round_trips_presets(frame: bytes) -> None:
     )
     _slot, brew_time, temperature, water_amount = frame[3:7]
     assert payload[1:4] == bytes([temperature, brew_time, water_amount])
+
+
+def test_parse_longer_preset() -> None:
+    """Firmware 061026-1 sends four 0xFF bytes after the name field."""
+    frame = PRESET_REPLIES[1]
+    longer = build_frame(OP_PRESET + 1, frame[3:-1] + b"\xff" * 4)
+    assert len(longer) == 60
+    assert parse_preset(longer) == parse_preset(frame)
+
+
+def test_parse_short_preset() -> None:
+    """A preset reply shorter than 56 bytes is rejected."""
+    with pytest.raises(ValueError):
+        parse_preset(PRESET_REPLIES[1][:40])
+
+
+def test_extended_start_payload() -> None:
+    """The extended frame adds the initiator, name and recipe fields."""
+    short = start_brew_payload(95, 250, 300)
+    extended = start_brew_payload(95, 250, 300, name="Home Assistant")
+    assert len(build_frame(OP_START_BREW, short)) == 15
+    assert len(build_frame(OP_START_BREW, extended)) == 75
+    assert extended[: len(short)] == short
+    assert extended[11:19] == b"\xff" * 8
+    assert extended[19:67] == "Home Assistant".encode("utf-16-le").ljust(48, b"\0")
+    assert extended[67:] == b"\xff" * 4
+
+
+def test_start_accepted() -> None:
+    """The start reply payload is 0 when BRU accepts and 1 when it refuses."""
+    assert start_accepted(START_ACCEPTED)
+    assert not start_accepted(START_REFUSED)

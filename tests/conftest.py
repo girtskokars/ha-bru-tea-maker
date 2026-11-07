@@ -37,6 +37,11 @@ PRESET_REPLIES = {
     ),
 }
 START_ACCEPTED = bytes.fromhex("ff05410081")
+START_REFUSED = bytes.fromhex("ff05410180")
+# Start frame lengths: 160626-2 takes only the short frame, 061026-1 only
+# the extended one.
+SHORT_START = 15
+EXTENDED_START = 75
 
 
 @pytest.fixture(autouse=True)
@@ -84,6 +89,7 @@ class FakeBru:
         self.paired = False
         self.connected = True
         self.reachable = True
+        self.start_frames = {SHORT_START}
         self.pair_error: BaseException | None = None
         self._notify: Callable[[Any, bytearray], None] | None = None
 
@@ -121,7 +127,8 @@ class FakeBru:
             case 0x50:
                 return PRESET_REPLIES[command[3]]
             case 0x40:
-                return START_ACCEPTED
+                accepted = len(command) in self.start_frames
+                return START_ACCEPTED if accepted else START_REFUSED
         return None
 
 
