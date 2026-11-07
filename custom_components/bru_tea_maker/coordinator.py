@@ -9,13 +9,19 @@ from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    HomeAssistantError,
+    ServiceValidationError,
+)
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util.hass_dict import HassKey
 
 from .const import (
+    ATTENTION_MESSAGES,
     AWAKE_UPDATE_INTERVAL,
     BREW_NAME,
+    BUSY_STATUSES,
     COMMAND_UUID,
     DEFAULT_SETTINGS,
     DOMAIN,
@@ -116,6 +122,7 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
 
     async def async_start_brew(self) -> None:
         """Start a brew with the current settings."""
+        self._check_can_brew()
         try:
             try:
                 accepted = await self._start_brew(BREW_NAME)
@@ -125,10 +132,31 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
                 # Older firmware refuses, or does not answer, the longer frame.
                 accepted = await self._start_brew(None)
         except (BleakError, TimeoutError, ValueError) as err:
-            raise HomeAssistantError(f"Could not start the brew: {err!r}") from err
+            LOGGER.debug("Starting the brew failed: %r", err)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="start_failed"
+            ) from err
         if not accepted:
-            raise HomeAssistantError("The tea maker refused to start the brew")
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="start_refused"
+            )
         await self.async_request_refresh()
+
+    def _check_can_brew(self) -> None:
+        """Raise if the tea maker cannot start a brew right now."""
+        if self.data is None or not self.last_update_success or not self.connected:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="not_connected"
+            )
+        if self.data.message in ATTENTION_MESSAGES:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key=f"prompt_{self.data.message}",
+            )
+        if self.data.status in BUSY_STATUSES:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="busy"
+            )
 
     async def _start_brew(self, name: str | None) -> bool:
         payload = start_brew_payload(**self.settings, name=name)
@@ -139,7 +167,10 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         try:
             await self._read_presets()
         except (BleakError, TimeoutError, ValueError) as err:
-            raise HomeAssistantError(f"Could not read the presets: {err!r}") from err
+            LOGGER.debug("Reading the presets failed: %r", err)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="sync_failed"
+            ) from err
         self.async_update_listeners()
 
     async def async_shutdown(self) -> None:
@@ -148,12 +179,13 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         await self._disconnect()
 
     @property
-    def _connected(self) -> bool:
+    def connected(self) -> bool:
+        """Return whether the tea maker is connected."""
         return self._client is not None and self._client.is_connected
 
     async def _async_update_data(self) -> BruStatus:
         try:
-            if not self._connected:
+            if not self.connected:
                 # Until the tea maker answers again, retry at the slow pace.
                 self.update_interval = STANDBY_UPDATE_INTERVAL
                 await self._connect()
@@ -169,7 +201,10 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
             status = parse_status(frame)
         except (BleakError, TimeoutError, ValueError) as err:
             await self._disconnect()
-            raise UpdateFailed(f"Lost the BRU tea maker: {err!r}") from err
+            LOGGER.debug("Lost the tea maker: %r", err)
+            raise UpdateFailed(
+                translation_domain=DOMAIN, translation_key="connection_lost"
+            ) from err
         self._missed_poll = False
         self.update_interval = (
             AWAKE_UPDATE_INTERVAL if status.awake else STANDBY_UPDATE_INTERVAL
@@ -181,7 +216,9 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
             self.hass, self.address, connectable=True
         )
         if ble_device is None:
-            raise UpdateFailed("The BRU tea maker is not in Bluetooth range")
+            raise UpdateFailed(
+                translation_domain=DOMAIN, translation_key="not_in_range"
+            )
         async with asyncio.timeout(_CONNECT_TIMEOUT):
             client = await establish_connection(
                 BleakClientWithServiceCache,
@@ -248,7 +285,7 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
     async def _request(self, opcode: int, payload: bytes = b"") -> bytes:
         """Send a command and return BRU's reply to it."""
         async with self._request_lock:
-            if not self._connected:
+            if not self.connected:
                 raise BleakError("Not connected")
             assert self._client is not None
             command = build_frame(opcode, payload)

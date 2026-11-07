@@ -134,5 +134,49 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "not_connected": {
+      "message": "Home Assistant is not connected to the tea maker right now."
+    },
+    "busy": {
+      "message": "The tea maker is busy. Wait until it is done, then try again."
+    },
+    "start_failed": {
+      "message": "Could not start the brew. Check that the tea maker is in Bluetooth range."
+    },
+    "start_refused": {
+      "message": "The tea maker did not start the brew. Check its display."
+    },
+    "sync_failed": {
+      "message": "Could not read the presets from the tea maker."
+    },
+    "prompt_place_cup": {
+      "message": "The tea maker shows \"Place cup\". Place a cup first."
+    },
+    "prompt_close_lid": {
+      "message": "The tea maker shows \"Close lid\". Close the lid first."
+    },
+    "prompt_add_water": {
+      "message": "The tea maker shows \"Add water\". Add water first."
+    },
+    "prompt_insert_chamber": {
+      "message": "The tea maker shows \"Place chamber\". Place the brewing chamber first."
+    },
+    "prompt_no_nozzle": {
+      "message": "The tea maker shows that the nozzle is missing."
+    },
+    "prompt_error": {
+      "message": "The tea maker shows an error. Check its display."
+    },
+    "prompt_check_engine": {
+      "message": "The tea maker shows \"Check engine\". Check its display."
+    },
+    "not_in_range": {
+      "message": "The tea maker is not in Bluetooth range."
+    },
+    "connection_lost": {
+      "message": "Lost the connection to the tea maker."
+    }
   }
 }

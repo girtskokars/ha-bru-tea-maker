@@ -59,8 +59,9 @@ async def test_refused_brew_is_an_error(
     """A start the tea maker refuses in both layouts is reported."""
     fake_bru.start_frames = set()
     await _setup(hass, config_entry)
-    with pytest.raises(HomeAssistantError, match="refused"):
+    with pytest.raises(HomeAssistantError) as err:
         await _brew(hass)
+    assert err.value.translation_key == "start_refused"
 
 
 def _reauth_flows(hass: HomeAssistant) -> list[object]:

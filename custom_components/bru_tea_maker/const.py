@@ -80,3 +80,25 @@ MESSAGES = {
     132: "place_descaling",
     133: "check_engine",
 }
+
+# Statuses during which a brew runs.
+BREWING_STATUSES = {*BREW_PHASES.values(), "brewing", "dispensing"}
+# Statuses in which the tea maker does not start a new brew.
+BUSY_STATUSES = {
+    *BREWING_STATUSES,
+    "machine_setup",
+    "test_mode",
+    "drying",
+    "descaling",
+    "bluetooth_menu",
+}
+# Prompts that need someone at the tea maker before it can brew.
+ATTENTION_MESSAGES = {
+    "place_cup",
+    "close_lid",
+    "add_water",
+    "insert_chamber",
+    "no_nozzle",
+    "error",
+    "check_engine",
+}

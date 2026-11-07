@@ -54,7 +54,7 @@ Pairing is only needed once.
 | Water quantity | Number | Amount of water for the next brew: 50–500 ml, in steps of 50. |
 | Steeping time | Number | Steeping time for the next brew: 10–600 seconds, in steps of 10. |
 | Preset | Select | Copies one of the tea maker's own presets into the three settings above. Shows **Custom** once a setting is changed by hand. |
-| Brew | Button | Starts a brew with the current settings. |
+| Brew | Button | Starts a brew with the current settings. If the tea maker is busy or shows a prompt such as "Place cup", it says so instead. |
 | Sync presets | Button | Reads the presets from the tea maker again, after you change them on the machine. |
 
 The brew settings live in Home Assistant, so they can be changed even while
