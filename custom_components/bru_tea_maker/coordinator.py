@@ -46,6 +46,11 @@ _CONNECT_TIMEOUT = 90
 _ENCRYPT_TIMEOUT = 20
 # BRU answers within about 100 ms.
 _REPLY_TIMEOUT = 3
+# bleak waits up to 10 s for BlueZ to confirm a disconnect and only then
+# closes the client's D-Bus connection. Cutting it short leaves that
+# connection's notification subscription in BlueZ, and every later
+# notification then arrives once more per leftover subscription.
+_DISCONNECT_TIMEOUT = 15
 # One slow or lost pairing attempt is not a missing bond: a link that drops
 # mid-attempt can cut one short. Only this many failures in a row are taken to
 # mean the bond is gone.
@@ -224,7 +229,7 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
             return
         client, self._client = self._client, None
         try:
-            async with asyncio.timeout(_REPLY_TIMEOUT):
+            async with asyncio.timeout(_DISCONNECT_TIMEOUT):
                 await client.disconnect()
         except (BleakError, TimeoutError) as err:
             LOGGER.debug("Disconnect did not complete: %r", err)
