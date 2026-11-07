@@ -8,6 +8,10 @@
           "address": "Device"
         }
       },
+      "no_devices": {
+        "title": "No tea maker found",
+        "description": "Home Assistant cannot see a BRU tea maker that is not set up yet.\n\n- Check that the tea maker is switched on.\n- Move it closer to Home Assistant or to a Bluetooth proxy.\n- Close the BRU app on your phone. While it is connected, the tea maker may not be visible.\n- Tea makers that are already set up are not listed.\n\nPress **Submit** to search again."
+      },
       "bluetooth_confirm": {
         "title": "Set up {name}",
         "description": "Set up **{name}**?\n\nOn the tea maker, open **Machine setup → Pair new device**. Then press **Submit**."
@@ -47,7 +51,6 @@
       "pairing_failed": "Pairing failed."
     },
     "abort": {
-      "no_devices_found": "No unconfigured BRU tea makers found.",
       "already_configured": "Device is already configured",
       "already_in_progress": "Setup of this tea maker is already in progress.",
       "cannot_connect": "The tea maker is not in Bluetooth range of Home Assistant.",

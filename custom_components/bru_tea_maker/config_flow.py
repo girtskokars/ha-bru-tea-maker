@@ -84,7 +84,7 @@ class BruConfigFlow(ConfigFlow, domain=DOMAIN):
             if info.name.startswith("BRU.M") and info.address not in configured
         }
         if not self._discovered:
-            return self.async_abort(reason="no_devices_found")
+            return self.async_show_form(step_id="no_devices")
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
@@ -98,6 +98,12 @@ class BruConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
         )
+
+    async def async_step_no_devices(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Search again after none were found."""
+        return await self.async_step_user()
 
     async def async_step_reauth(
         self, entry_data: Mapping[str, Any]

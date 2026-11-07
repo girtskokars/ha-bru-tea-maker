@@ -161,14 +161,22 @@ async def test_bluetooth_discovery(
     assert result["title"] == "BRU Tea Maker"
 
 
-async def test_no_devices(hass: HomeAssistant) -> None:
-    """Without tea makers in range the flow aborts."""
+async def test_no_devices_searches_again(hass: HomeAssistant) -> None:
+    """Without tea makers in range the flow gives hints and searches again."""
     with patch(f"{FLOW}.async_discovered_service_info", return_value=[]):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": SOURCE_USER}
         )
-    assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "no_devices_found"
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "no_devices"
+        # Still nothing: the hints stay.
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+        assert result["step_id"] == "no_devices"
+
+    # The tea maker has turned up.
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
 
 
 async def test_update_mode_is_not_offered(hass: HomeAssistant) -> None:
@@ -178,8 +186,7 @@ async def test_update_mode_is_not_offered(hass: HomeAssistant) -> None:
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": SOURCE_USER}
         )
-    assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "no_devices_found"
+    assert result["step_id"] == "no_devices"
 
 
 @pytest.mark.parametrize(
