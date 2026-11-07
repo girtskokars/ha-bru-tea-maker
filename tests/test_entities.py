@@ -3,9 +3,12 @@
 from unittest.mock import patch
 
 from homeassistant.const import STATE_UNAVAILABLE
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    mock_restore_cache_with_extra_data,
+)
 
 from .conftest import FakeBru
 
@@ -120,3 +123,36 @@ async def test_connect_uses_no_pairing_agent(
         await _setup(hass, config_entry)
     assert fake_bru.paired
     bus.assert_not_called()
+
+
+async def test_typed_and_restored_values_snap(
+    hass: HomeAssistant,
+    enable_bluetooth: None,
+    fake_bru: FakeBru,
+    config_entry: MockConfigEntry,
+) -> None:
+    """The number shown is always a value the tea maker brews."""
+    temperature = "number.bru_tea_maker_water_temperature"
+    mock_restore_cache_with_extra_data(
+        hass,
+        [
+            (
+                State(temperature, "92"),
+                {
+                    "native_max_value": 100,
+                    "native_min_value": 40,
+                    "native_step": 5,
+                    "native_unit_of_measurement": "°C",
+                    "native_value": 92,
+                },
+            )
+        ],
+    )
+    await _setup(hass, config_entry)
+    assert hass.states.get(temperature).state == "90"
+
+    quantity = "number.bru_tea_maker_water_quantity"
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": quantity, "value": 275}, blocking=True
+    )
+    assert hass.states.get(quantity).state == "300"

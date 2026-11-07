@@ -35,6 +35,7 @@ from .protocol import (
     parse_preset,
     parse_preset_count,
     parse_status,
+    snap_setting,
     start_accepted,
     start_brew_payload,
 )
@@ -99,9 +100,9 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         failures[self.config_entry.entry_id] = value
 
     @callback
-    def async_set_setting(self, key: str, value: int) -> None:
+    def async_set_setting(self, key: str, value: float) -> None:
         """Change one setting for the next brew."""
-        self.settings[key] = value
+        self.settings[key] = snap_setting(key, value)
         self.preset = None
         self.async_update_listeners()
 

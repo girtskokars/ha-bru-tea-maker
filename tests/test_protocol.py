@@ -18,6 +18,7 @@ from custom_components.bru_tea_maker.protocol import (
     parse_preset,
     parse_preset_count,
     parse_status,
+    snap_setting,
     start_accepted,
     start_brew_payload,
 )
@@ -169,3 +170,30 @@ def test_start_accepted() -> None:
     """The start reply payload is 0 when BRU accepts and 1 when it refuses."""
     assert start_accepted(START_ACCEPTED)
     assert not start_accepted(START_REFUSED)
+
+
+@pytest.mark.parametrize(
+    ("key", "value", "snapped"),
+    [
+        ("temperature", 92, 90),
+        ("temperature", 93, 95),
+        ("temperature", 39.9, 40),
+        ("temperature", 101, 100),
+        ("water_amount", 275, 300),
+        ("water_amount", 260, 250),
+        ("brew_time", 185, 190),
+        ("brew_time", 600, 600),
+    ],
+)
+def test_snap_setting(key: str, value: float, snapped: int) -> None:
+    """Values snap to the nearest step the tea maker accepts."""
+    assert snap_setting(key, value) == snapped
+
+
+@pytest.mark.parametrize("temperature", range(40, 101, 5))
+def test_start_payload_round_trips_settings(temperature: int) -> None:
+    """Every accepted temperature is sent as exactly that temperature."""
+    payload = start_brew_payload(temperature, 500, 600)
+    assert payload[1] * 5 + 40 == temperature
+    assert (payload[2] + 1) * 10 == 600
+    assert (payload[3] + 1) * 50 == 500

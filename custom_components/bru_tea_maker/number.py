@@ -11,29 +11,22 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import BruConfigEntry, BruCoordinator
 from .entity import BruEntity
+from .protocol import SETTING_RANGES, snap_setting
 
-NUMBERS = (
+_UNITS = {
+    "temperature": UnitOfTemperature.CELSIUS,
+    "water_amount": UnitOfVolume.MILLILITERS,
+    "brew_time": UnitOfTime.SECONDS,
+}
+NUMBERS = tuple(
     NumberEntityDescription(
-        key="temperature",
-        native_min_value=40,
-        native_max_value=100,
-        native_step=5,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-    ),
-    NumberEntityDescription(
-        key="water_amount",
-        native_min_value=50,
-        native_max_value=500,
-        native_step=50,
-        native_unit_of_measurement=UnitOfVolume.MILLILITERS,
-    ),
-    NumberEntityDescription(
-        key="brew_time",
-        native_min_value=10,
-        native_max_value=600,
-        native_step=10,
-        native_unit_of_measurement=UnitOfTime.SECONDS,
-    ),
+        key=key,
+        native_min_value=low,
+        native_max_value=high,
+        native_step=step,
+        native_unit_of_measurement=_UNITS[key],
+    )
+    for key, (low, high, step) in SETTING_RANGES.items()
 )
 
 
@@ -69,7 +62,9 @@ class BruNumber(BruEntity, RestoreNumber):
         await super().async_added_to_hass()
         last = await self.async_get_last_number_data()
         if last is not None and last.native_value is not None:
-            self.coordinator.settings[self._key] = int(last.native_value)
+            self.coordinator.settings[self._key] = snap_setting(
+                self._key, last.native_value
+            )
 
     @property
     def native_value(self) -> int:
@@ -78,4 +73,4 @@ class BruNumber(BruEntity, RestoreNumber):
 
     async def async_set_native_value(self, value: float) -> None:
         """Change the setting."""
-        self.coordinator.async_set_setting(self._key, int(value))
+        self.coordinator.async_set_setting(self._key, value)

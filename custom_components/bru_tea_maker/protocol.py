@@ -6,6 +6,7 @@ with a frame whose opcode is the command's plus one.
 """
 
 from dataclasses import dataclass
+import math
 
 from .const import (
     BREW_PHASES,
@@ -27,6 +28,13 @@ _PRESET_FRAME_LENGTH = 56
 _PRESET_NAME_LENGTH = 48
 _PRESET_SLOTS = 10
 _START_REPLY_FRAME_LENGTH = 5
+
+# Brew settings the tea maker accepts: minimum, maximum and step.
+SETTING_RANGES = {
+    "temperature": (40, 100, 5),
+    "water_amount": (50, 500, 50),
+    "brew_time": (10, 600, 10),
+}
 
 
 @dataclass(frozen=True)
@@ -73,6 +81,14 @@ def _payload(frame: bytes, length: int, *, exact: bool = True) -> bytes:
     if too_short or (exact and len(frame) != length):
         raise ValueError(f"Unexpected reply: {frame.hex()}")
     return frame[3:-1]
+
+
+def snap_setting(key: str, value: float) -> int:
+    """Return the value nearest to ``value`` that the tea maker accepts."""
+    low, high, step = SETTING_RANGES[key]
+    # Halves round up, so 275 ml becomes 300 ml rather than Python's 250.
+    snapped = low + math.floor((value - low) / step + 0.5) * step
+    return min(max(snapped, low), high)
 
 
 def start_brew_payload(

@@ -58,7 +58,8 @@ Pairing is only needed once.
 | Sync presets | Button | Reads the presets from the tea maker again, after you change them on the machine. |
 
 The brew settings live in Home Assistant, so they can be changed even while
-the tea maker is out of range.
+the tea maker is out of range. A value between steps, such as 92 °C, is
+rounded to the nearest one the tea maker accepts.
 
 ## Troubleshooting
 
