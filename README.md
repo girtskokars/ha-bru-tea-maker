@@ -107,6 +107,11 @@ as `BRU… (AA:BB:CC:DD:EE:FF)`.
 
 Tested with ESPHome 2026.9.
 
+## Protocol notes
+
+How the integration talks to the tea maker, including differences between
+firmware versions, is described in [protocol.md](protocol.md).
+
 ## Disclaimer
 
 This is an unofficial integration and is not affiliated with BRU. It was built

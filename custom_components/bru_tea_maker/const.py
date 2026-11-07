@@ -16,6 +16,8 @@ AWAKE_UPDATE_INTERVAL = timedelta(seconds=1)
 
 # Settings for the next brew, keyed like the number entities.
 DEFAULT_SETTINGS = {"temperature": 90, "water_amount": 250, "brew_time": 180}
+# Name the tea maker records for brews started from Home Assistant.
+BREW_NAME = "Home Assistant"
 
 STATUS_STANDBY = 1
 STATUS_BREWING = 5

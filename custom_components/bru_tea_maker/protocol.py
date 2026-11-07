@@ -24,7 +24,9 @@ OP_PRESET = 0x50
 _STATUS_FRAME_LENGTH = 10
 _SETUP_FRAME_LENGTH = 8
 _PRESET_FRAME_LENGTH = 56
+_PRESET_NAME_LENGTH = 48
 _PRESET_SLOTS = 10
+_START_REPLY_FRAME_LENGTH = 5
 
 
 @dataclass(frozen=True)
@@ -66,15 +68,25 @@ def is_valid_frame(frame: bytes) -> bool:
     )
 
 
-def _payload(frame: bytes, length: int) -> bytes:
-    if len(frame) != length:
+def _payload(frame: bytes, length: int, *, exact: bool = True) -> bytes:
+    too_short = len(frame) < length
+    if too_short or (exact and len(frame) != length):
         raise ValueError(f"Unexpected reply: {frame.hex()}")
     return frame[3:-1]
 
 
-def start_brew_payload(temperature: int, water_amount: int, brew_time: int) -> bytes:
-    """Encode a brew of ``temperature`` °C, ``water_amount`` ml, ``brew_time`` s."""
-    return bytes(
+def start_brew_payload(
+    temperature: int, water_amount: int, brew_time: int, name: str | None = None
+) -> bytes:
+    """Encode a brew of ``temperature`` °C, ``water_amount`` ml, ``brew_time`` s.
+
+    The BRU app follows the parameters with an 8-byte initiator field, the
+    program name (48 bytes, UTF-16) and a 4-byte recipe field. A brew started
+    on the machine itself leaves the initiator all 0xFF, and a brew without a
+    recipe leaves the recipe all 0xFF. Without a ``name`` only the parameters
+    are sent, which is the layout older firmware takes.
+    """
+    parameters = bytes(
         [
             0,
             (temperature - 40) // 5,
@@ -89,6 +101,16 @@ def start_brew_payload(temperature: int, water_amount: int, brew_time: int) -> b
             0,
         ]
     )
+    if name is None:
+        return parameters
+    name_field = name.encode("utf-16-le")[:_PRESET_NAME_LENGTH]
+    name_field = name_field.ljust(_PRESET_NAME_LENGTH, b"\0")
+    return parameters + b"\xff" * 8 + name_field + b"\xff" * 4
+
+
+def start_accepted(frame: bytes) -> bool:
+    """Return whether BRU accepted a start command: its reply payload is 0."""
+    return _payload(frame, _START_REPLY_FRAME_LENGTH)[0] == 0
 
 
 def parse_status(frame: bytes) -> BruStatus:
@@ -113,11 +135,20 @@ def parse_preset_count(frame: bytes) -> int:
 
 
 def parse_preset(frame: bytes) -> BruPreset:
-    """Decode the reply to OP_PRESET."""
+    """Decode the reply to OP_PRESET.
+
+    Some firmware sends four extra bytes after the name field, so a longer
+    frame is accepted and only the name field is read.
+    """
     slot, brew_time, temperature, water_amount, *name = _payload(
-        frame, _PRESET_FRAME_LENGTH
+        frame, _PRESET_FRAME_LENGTH, exact=False
     )
-    text = bytes(name).decode("utf-16-le", errors="replace").split("\0", 1)[0].strip()
+    text = (
+        bytes(name[:_PRESET_NAME_LENGTH])
+        .decode("utf-16-le", errors="replace")
+        .split("\0", 1)[0]
+        .strip()
+    )
     return BruPreset(
         name=text or f"Preset {slot}",
         temperature=temperature * 5 + 40,
