@@ -12,6 +12,16 @@ account is involved.
   maker, **or** an ESPHome Bluetooth proxy near the tea maker with the extra
   configuration described [below](#esphome-bluetooth-proxy).
 
+## Supported devices
+
+Tested with:
+
+| | Version |
+| --- | --- |
+| Model | BRU Maker One (BRU 100) |
+| Hardware | V1.0.1 |
+| Firmware | 160626-2, 061026-1 |
+
 ## Installation
 
 ### HACS
@@ -64,9 +74,9 @@ The brew settings live in Home Assistant, so they can be changed even while
 the tea maker is out of range. A value between steps, such as 92 °C, is
 rounded to the nearest one the tea maker accepts.
 
-The device page shows the tea maker's firmware version, and as its serial
-number the end of its Bluetooth name (`1422E73F` for `BRU.M2-1422E73F`), to
-tell two tea makers apart.
+The device page shows the tea maker's firmware and hardware versions, and as
+its serial number the end of its Bluetooth name (`1422E73F` for
+`BRU.M2-1422E73F`), to tell two tea makers apart.
 
 Your entity IDs may differ from the ones in the examples below; check them
 under **Settings → Entities**.
