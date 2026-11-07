@@ -2,6 +2,7 @@
 
 import pytest
 
+from custom_components.bru_tea_maker import pairing
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -110,4 +111,46 @@ async def test_successful_pairing_resets_the_count(
     await hass.config_entries.async_reload(config_entry.entry_id)
     await hass.async_block_till_done()
     assert config_entry.state is ConfigEntryState.SETUP_RETRY
+    assert not _reauth_flows(hass)
+
+
+async def test_failed_pairing_records_lockout(
+    hass: HomeAssistant,
+    enable_bluetooth: None,
+    fake_bru: FakeBru,
+    config_entry: MockConfigEntry,
+) -> None:
+    """Every failed attempt counts toward the tea maker's lockout."""
+    pairing._failures.clear()
+    fake_bru.pair_error = TimeoutError()
+    await _setup(hass, config_entry)
+    assert pairing.lockout_remaining(config_entry.data["address"]) > 0
+    pairing._failures.clear()
+
+
+async def test_removed_entry_forgets_failures(
+    hass: HomeAssistant,
+    enable_bluetooth: None,
+    fake_bru: FakeBru,
+    config_entry: MockConfigEntry,
+) -> None:
+    """A tea maker that is removed and added again starts counting at 0."""
+    fake_bru.pair_error = TimeoutError()
+    await _setup(hass, config_entry)
+    await hass.config_entries.async_reload(config_entry.entry_id)
+    await hass.async_block_till_done()
+    await hass.config_entries.async_remove(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    entry = MockConfigEntry(
+        domain=config_entry.domain,
+        entry_id=config_entry.entry_id,
+        unique_id=config_entry.unique_id,
+        data=config_entry.data,
+    )
+    entry.add_to_hass(hass)
+    await _setup(hass, entry)
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.SETUP_RETRY
     assert not _reauth_flows(hass)

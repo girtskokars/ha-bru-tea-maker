@@ -183,6 +183,12 @@
     },
     "connection_lost": {
       "message": "Lost the connection to the tea maker."
+    },
+    "pair_attempt_failed": {
+      "message": "Could not resume the pairing with the tea maker (attempt {attempt} of {attempts})."
+    },
+    "not_paired": {
+      "message": "The tea maker is not paired with Home Assistant."
     }
   },
   "services": {

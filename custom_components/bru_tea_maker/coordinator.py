@@ -37,6 +37,7 @@ from .const import (
     STATUS_BREWING,
     STATUS_UUID,
 )
+from .pairing import record_failure
 from .protocol import (
     OP_PRESET,
     OP_SETUP,
@@ -257,6 +258,9 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
             if isinstance(err, BleakError) and not client.is_connected:
                 raise
             await self._disconnect()
+            # Each failed attempt makes the tea maker refuse new ones for a
+            # while; the re-pair flow tells the user how long to wait.
+            record_failure(self.address)
             self._pair_failures += 1
             LOGGER.warning(
                 "Pairing attempt %d of %d failed: %r. If it keeps failing, "
@@ -268,12 +272,19 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
             )
             if self._pair_failures < _PAIR_FAILURES_BEFORE_REAUTH:
                 raise UpdateFailed(
-                    f"Pairing attempt {self._pair_failures} failed: {err!r}"
+                    translation_domain=DOMAIN,
+                    translation_key="pair_attempt_failed",
+                    translation_placeholders={
+                        "attempt": str(self._pair_failures),
+                        "attempts": str(_PAIR_FAILURES_BEFORE_REAUTH),
+                    },
                 ) from err
             # Retrying cannot fix a missing bond, and every failed attempt
             # makes BRU refuse new ones for about five minutes.
             self._pair_failures = 0
-            raise ConfigEntryAuthFailed("The BRU tea maker is not paired") from err
+            raise ConfigEntryAuthFailed(
+                translation_domain=DOMAIN, translation_key="not_paired"
+            ) from err
         self._pair_failures = 0
         async with asyncio.timeout(_ENCRYPT_TIMEOUT):
             await client.start_notify(STATUS_UUID, self._on_notify)
@@ -380,3 +391,9 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         opcode, reply = self._reply
         if frame[2] == opcode and not reply.done():
             reply.set_result(frame)
+
+
+@callback
+def async_clear_pair_failures(hass: HomeAssistant, entry_id: str) -> None:
+    """Forget the pairing failures of a removed tea maker."""
+    hass.data.get(_PAIR_FAILURES_KEY, {}).pop(entry_id, None)

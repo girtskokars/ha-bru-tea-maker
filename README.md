@@ -100,7 +100,8 @@ automation:
 - **The tea maker is not found.** Move it within Bluetooth range of Home
   Assistant.
 - **Home Assistant asks you to pair again.** The pairing was lost. Follow the
-  prompt and pair as you did during setup.
+  prompt and pair as you did during setup. Home Assistant asks only after
+  three failed reconnects in a row, so a single slow reconnect does not.
 - **Reporting a problem.** On the device page, choose **Download
   diagnostics** and attach the file to the issue. It contains the recent
   messages to and from the tea maker and its firmware version, but not its

@@ -6,7 +6,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
-from .coordinator import BruConfigEntry, BruCoordinator
+from .coordinator import BruConfigEntry, BruCoordinator, async_clear_pair_failures
 from .services import async_setup_services
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -42,3 +42,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: BruConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: BruConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: BruConfigEntry) -> None:
+    """Forget the removed tea maker's pairing failures."""
+    async_clear_pair_failures(hass, entry.entry_id)
