@@ -68,9 +68,7 @@ The device page shows the tea maker's firmware version, and as its serial
 number the end of its Bluetooth name (`1422E73F` for `BRU.M2-1422E73F`), to
 tell two tea makers apart.
 
-The examples below use the entity IDs of a new installation, such as
-`number.bru_tea_maker_water_temperature`. Installations from before 1.1.0 keep
-their earlier IDs, such as `number.bru_tea_maker_temperature`; check yours
+Your entity IDs may differ from the ones in the examples below; check them
 under **Settings → Entities**.
 
 ## Dashboard
