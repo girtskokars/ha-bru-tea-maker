@@ -175,3 +175,10 @@ def parse_preset(frame: bytes) -> BruPreset:
         water_amount=(water_amount + 1) * 50,
         brew_time=(brew_time + 1) * 10,
     )
+
+
+def serial_from_name(name: str | None) -> str | None:
+    """Return the serial in a Bluetooth name, ``1422E73F`` in ``BRU.M2-1422E73F``."""
+    if name is None or not name.startswith("BRU."):
+        return None
+    return name.partition("-")[2] or None

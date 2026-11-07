@@ -50,6 +50,7 @@ from .protocol import (
     parse_preset,
     parse_preset_count,
     parse_status,
+    serial_from_name,
     snap_setting,
     start_accepted,
     start_brew_payload,
@@ -102,6 +103,7 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         self._missed_poll = False
         self.firmware: str | None = None
         self.hardware: str | None = None
+        self.serial_number: str | None = None
         self.frames: deque[str] = deque(maxlen=_FRAME_HISTORY)
         self.last_status_frame: bytes | None = None
         self._unknown_statuses: set[tuple[int, int]] = set()
@@ -249,6 +251,7 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
                 use_services_cache=False,
             )
         self._client = client
+        self.serial_number = serial_from_name(ble_device.name) or self.serial_number
         # BRU rejects everything, including the notification subscription,
         # until the link is encrypted.
         try:
@@ -308,7 +311,11 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
     async def _read_device_information(
         self, client: BleakClientWithServiceCache
     ) -> None:
-        """Read the firmware and hardware versions once per connection."""
+        """Read the firmware and hardware versions once per connection.
+
+        They and the serial number go to the device registry when they
+        change, such as after a firmware update.
+        """
         values: list[str | None] = []
         for uuid in (FIRMWARE_UUID, HARDWARE_UUID):
             try:
@@ -325,10 +332,15 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
             (DOMAIN, self.address), self.config_entry.entry_id
         )
         if device is not None and (
-            device.sw_version != self.firmware or device.hw_version != self.hardware
+            device.sw_version != self.firmware
+            or device.hw_version != self.hardware
+            or device.serial_number != self.serial_number
         ):
             registry.async_update_device(
-                device.id, sw_version=self.firmware, hw_version=self.hardware
+                device.id,
+                sw_version=self.firmware,
+                hw_version=self.hardware,
+                serial_number=self.serial_number,
             )
 
     def _log_unknown_status(self, status: BruStatus) -> None:

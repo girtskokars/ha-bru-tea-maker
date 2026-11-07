@@ -18,6 +18,7 @@ from custom_components.bru_tea_maker.protocol import (
     parse_preset,
     parse_preset_count,
     parse_status,
+    serial_from_name,
     snap_setting,
     start_accepted,
     start_brew_payload,
@@ -197,3 +198,19 @@ def test_start_payload_round_trips_settings(temperature: int) -> None:
     assert payload[1] * 5 + 40 == temperature
     assert (payload[2] + 1) * 10 == 600
     assert (payload[3] + 1) * 50 == 500
+
+
+@pytest.mark.parametrize(
+    ("name", "serial"),
+    [
+        ("BRU.M2-1422E73F", "1422E73F"),
+        ("BRU.M2", None),
+        ("BRU.M2-", None),
+        ("BRU_U", None),
+        ("F4:14:14:22:E7:3F", None),
+        (None, None),
+    ],
+)
+def test_serial_from_name(name: str | None, serial: str | None) -> None:
+    """The serial is the Bluetooth name's suffix, when it has one."""
+    assert serial_from_name(name) == serial

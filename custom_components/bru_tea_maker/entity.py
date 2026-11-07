@@ -26,4 +26,5 @@ class BruEntity(CoordinatorEntity[BruCoordinator]):
             model_id="BRU 100",
             sw_version=coordinator.firmware,
             hw_version=coordinator.hardware,
+            serial_number=coordinator.serial_number,
         )

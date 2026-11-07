@@ -21,6 +21,7 @@ from homeassistant.core import callback
 from .const import DOMAIN, LOGGER
 from .pairing import BruPairing, BruPairingError, lockout_remaining
 
+ENTRY_TITLE = "BRU Tea Maker"
 _DOCS_URL = "https://github.com/girtskokars/ha-bru-tea-maker#esphome-bluetooth-proxy"
 
 # Failures a misconfigured proxy causes; through a proxy they get a hint.
@@ -225,8 +226,10 @@ class BruConfigFlow(ConfigFlow, domain=DOMAIN):
         if err is None and not task.cancelled():
             if self.source == SOURCE_REAUTH:
                 return self.async_update_reload_and_abort(self._get_reauth_entry())
+            # The Bluetooth name is shown while choosing the tea maker; the
+            # entry is named for what it is, and renamed in the UI.
             return self.async_create_entry(
-                title=self._name, data={CONF_ADDRESS: self._address}
+                title=ENTRY_TITLE, data={CONF_ADDRESS: self._address}
             )
         LOGGER.debug(
             "Pairing with %s failed: %r (cause: %r)",

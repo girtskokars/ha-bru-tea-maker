@@ -53,7 +53,7 @@ async def test_firmware_on_device_page(
     fake_bru: FakeBru,
     config_entry: MockConfigEntry,
 ) -> None:
-    """The device shows the firmware and hardware versions, and follows updates."""
+    """The device shows its versions and serial, and follows firmware updates."""
     await _setup(hass, config_entry)
     registry = dr.async_get(hass)
     device = registry.async_get_device_by_identifier(
@@ -61,6 +61,8 @@ async def test_firmware_on_device_page(
     )
     assert device is not None
     assert (device.sw_version, device.hw_version) == ("061026-1", "V1.0.1")
+    # The suffix of the Bluetooth name, BRU.M2-1422E73F.
+    assert device.serial_number == "1422E73F"
 
     fake_bru.device_information = {}
     await hass.config_entries.async_reload(config_entry.entry_id)
@@ -70,3 +72,4 @@ async def test_firmware_on_device_page(
     )
     assert device is not None
     assert device.sw_version is None
+    assert device.serial_number == "1422E73F"

@@ -157,7 +157,8 @@ async def test_bluetooth_discovery(
     fake_pairing.instances[0].result.set_result(None)
     result = await _progress_done(hass, result["flow_id"])
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == NAME
+    # The Bluetooth name is only for choosing; the entry is named for what it is.
+    assert result["title"] == "BRU Tea Maker"
 
 
 async def test_no_devices(hass: HomeAssistant) -> None:
