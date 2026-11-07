@@ -50,10 +50,13 @@ Pairing is only needed once.
 | --- | --- | --- |
 | *(device name)* | Sensor | What the tea maker is doing: standby, filling, steeping, serving, and so on. It is the device's main entity, so it is shown with the device name alone. |
 | Display message | Sensor | The message on the tea maker's display, such as "Place cup" or "Add water". |
+| Brewing | Binary sensor | On while a brew is running. |
+| Needs attention | Binary sensor | On while the tea maker needs someone before it can brew: a prompt such as "Place cup", "Close lid" or "Add water", or an error. The "Open lid" reminder after a brew does not count. |
+| Brew progress | Event | Fires **Started** when a brew starts and **Finished** when the tea is ready, once per brew. |
 | Water temperature | Number | Water temperature for the next brew: 40–100 °C, in steps of 5. The lowest setting, 40 °C, is what the tea maker shows as **Cold**: the water is not heated. |
 | Water quantity | Number | Amount of water for the next brew: 50–500 ml, in steps of 50. |
 | Steeping time | Number | Steeping time for the next brew: 10–600 seconds, in steps of 10. |
-| Preset | Select | Copies one of the tea maker's own presets into the three settings above. Shows **Custom** once a setting is changed by hand. |
+| Preset | Select | Copies one of the tea maker's own presets into the three settings above. Shows **Custom** once a setting is changed by hand. Presets with the same name get the slot number added, such as "GREEN TEA (2)". Unavailable until the presets have been read. |
 | Brew | Button | Starts a brew with the current settings. If the tea maker is busy or shows a prompt such as "Place cup", it says so instead. |
 | Sync presets | Button | Reads the presets from the tea maker again, after you change them on the machine. |
 
@@ -61,7 +64,51 @@ The brew settings live in Home Assistant, so they can be changed even while
 the tea maker is out of range. A value between steps, such as 92 °C, is
 rounded to the nearest one the tea maker accepts.
 
-The device page shows the tea maker's firmware version.
+The device page shows the tea maker's firmware version, and as its serial
+number the end of its Bluetooth name (`1422E73F` for `BRU.M2-1422E73F`), to
+tell two tea makers apart.
+
+The examples below use the entity IDs of a new installation, such as
+`number.bru_tea_maker_water_temperature`. Installations from before 1.1.0 keep
+their earlier IDs, such as `number.bru_tea_maker_temperature`; check yours
+under **Settings → Entities**.
+
+## Dashboard
+
+A card with the status, the settings and a Brew button:
+
+```yaml
+type: vertical-stack
+cards:
+  - type: tile
+    entity: sensor.bru_tea_maker
+  - type: tile
+    entity: select.bru_tea_maker_preset
+    features:
+      - type: select-options
+  - type: tile
+    entity: number.bru_tea_maker_water_temperature
+    features:
+      - type: numeric-input
+        style: buttons
+  - type: tile
+    entity: number.bru_tea_maker_water_quantity
+    features:
+      - type: numeric-input
+        style: buttons
+  - type: tile
+    entity: number.bru_tea_maker_steeping_time
+    features:
+      - type: numeric-input
+        style: buttons
+  - type: tile
+    entity: button.bru_tea_maker_brew
+    tap_action:
+      action: perform-action
+      perform_action: button.press
+      target:
+        entity_id: button.bru_tea_maker_brew
+```
 
 ## Actions
 
@@ -92,20 +139,92 @@ automation:
 | `water_amount` | Water quantity, 50–500 ml. |
 | `brew_time` | Steeping time, 10–600 seconds. |
 
+## Automation examples
+
+Notify when the tea is ready:
+
+```yaml
+automation:
+  - alias: Tea is ready
+    triggers:
+      - trigger: state
+        entity_id: event.bru_tea_maker_brew_progress
+        not_from: [unavailable, unknown]
+        not_to: unavailable
+    conditions:
+      - condition: state
+        entity_id: event.bru_tea_maker_brew_progress
+        attribute: event_type
+        state: finished
+    actions:
+      - action: notify.mobile_app_your_phone
+        data:
+          message: "{{ device_name('event.bru_tea_maker_brew_progress') }}: your tea is ready."
+```
+
+Notify when the tea maker needs you, with the message from its display:
+
+```yaml
+automation:
+  - alias: Tea maker needs attention
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.bru_tea_maker_needs_attention
+        from: "off"
+        to: "on"
+    actions:
+      - action: notify.mobile_app_your_phone
+        data:
+          message: >-
+            {{ device_name('binary_sensor.bru_tea_maker_needs_attention') }}:
+            {{ state_translated('sensor.bru_tea_maker_display_message') }}
+```
+
+Use `device_name()` and `entity_name()` for names in templates, not the
+`friendly_name` attribute, so they follow what the tea maker is called in Home
+Assistant.
+
 ## Troubleshooting
 
 - **Pairing failed.** The setup dialog says what went wrong and lets you try
   again. After a failed attempt the tea maker may refuse new ones for a few
   minutes; the dialog then suggests how long to wait.
-- **The tea maker is not found.** Move it within Bluetooth range of Home
-  Assistant.
+- **The tea maker is not found.** Setup lists what to check and searches
+  again when you press **Submit**. Move the tea maker within Bluetooth range
+  of Home Assistant or of a Bluetooth proxy.
+- **The BRU app cannot connect.** The tea maker accepts one connection at a
+  time, and Home Assistant stays connected. To use the app, disable the
+  integration for a while (**Settings → Devices & services → BRU Tea Maker →
+  ⋮ → Disable**). In the same way, while the app is connected, Home Assistant
+  cannot reach the tea maker: close the app or turn off the phone's
+  Bluetooth.
+- **Entities go unavailable.** Home Assistant shows the tea maker as
+  unavailable when the connection drops, and tries to reconnect right away
+  and whenever it hears from the tea maker. When the tea maker loses power,
+  it takes about 10 seconds to notice.
+- **"No free connections" through a proxy.** Each proxy has a limited number
+  of connections, and Home Assistant keeps one open to the tea maker. Raise
+  `max_connections` in the proxy's `esp32_ble` configuration (see
+  [below](#esphome-bluetooth-proxy)), or disconnect another device from that
+  proxy.
 - **Home Assistant asks you to pair again.** The pairing was lost. Follow the
   prompt and pair as you did during setup. Home Assistant asks only after
   three failed reconnects in a row, so a single slow reconnect does not.
+- **Pairing from scratch.** Remove the integration entry. On a local
+  adapter, also remove the old pairing from the Home Assistant machine with
+  `bluetoothctl remove AA:BB:CC:DD:EE:FF`. Then set it up again.
 - **Reporting a problem.** On the device page, choose **Download
   diagnostics** and attach the file to the issue. It contains the recent
   messages to and from the tea maker and its firmware version, but not its
-  Bluetooth address.
+  Bluetooth address. For more detail, turn on debug logging, either with
+  **Enable debug logging** on the integration's page or in
+  `configuration.yaml`:
+
+  ```yaml
+  logger:
+    logs:
+      custom_components.bru_tea_maker: debug
+  ```
 
 ## ESPHome Bluetooth proxy
 
