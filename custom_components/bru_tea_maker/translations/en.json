@@ -172,11 +172,45 @@
     "prompt_check_engine": {
       "message": "The tea maker shows \"Check engine\". Check its display."
     },
+    "preset_not_found": {
+      "message": "The tea maker has no preset called \"{preset}\". Its presets are: {presets}."
+    },
+    "device_not_loaded": {
+      "message": "This tea maker is not set up, or is not working right now."
+    },
     "not_in_range": {
       "message": "The tea maker is not in Bluetooth range."
     },
     "connection_lost": {
       "message": "Lost the connection to the tea maker."
+    }
+  },
+  "services": {
+    "brew": {
+      "name": "Brew",
+      "description": "Starts a brew with a preset or the current settings, using any values given here instead. The settings shown in Home Assistant do not change.",
+      "fields": {
+        "device_id": {
+          "name": "Tea maker",
+          "description": "The tea maker to brew with."
+        },
+        "preset": {
+          "name": "Preset",
+          "description": "Name of one of the tea maker's presets, as shown in the Preset select."
+        },
+        "temperature": {
+          "name": "Water temperature",
+          "description": "Water temperature. 40 °C is the tea maker's Cold setting: the water is not heated."
+        },
+        "water_amount": {
+          "name": "Water quantity",
+          "description": "Amount of water."
+        },
+        "brew_time": {
+          "name": "Steeping time",
+          "description": "Steeping time."
+        }
+      }
     }
   }
 }

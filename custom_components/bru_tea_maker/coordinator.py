@@ -1,6 +1,7 @@
 """Connection to, and state of, a BRU tea maker."""
 
 import asyncio
+from collections.abc import Mapping
 
 from bleak.exc import BleakError
 from bleak_retry_connector import BleakClientWithServiceCache, establish_connection
@@ -120,17 +121,18 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         self.preset = name
         self.async_update_listeners()
 
-    async def async_start_brew(self) -> None:
-        """Start a brew with the current settings."""
+    async def async_start_brew(self, settings: Mapping[str, int] | None = None) -> None:
+        """Start a brew with ``settings``, or with the current settings."""
+        settings = self.settings if settings is None else settings
         self._check_can_brew()
         try:
             try:
-                accepted = await self._start_brew(BREW_NAME)
+                accepted = await self._start_brew(settings, BREW_NAME)
             except TimeoutError:
                 accepted = False
             if not accepted:
                 # Older firmware refuses, or does not answer, the longer frame.
-                accepted = await self._start_brew(None)
+                accepted = await self._start_brew(settings, None)
         except (BleakError, TimeoutError, ValueError) as err:
             LOGGER.debug("Starting the brew failed: %r", err)
             raise HomeAssistantError(
@@ -158,8 +160,8 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
                 translation_domain=DOMAIN, translation_key="busy"
             )
 
-    async def _start_brew(self, name: str | None) -> bool:
-        payload = start_brew_payload(**self.settings, name=name)
+    async def _start_brew(self, settings: Mapping[str, int], name: str | None) -> bool:
+        payload = start_brew_payload(**settings, name=name)
         return start_accepted(await self._request(OP_START_BREW, payload))
 
     async def async_sync_presets(self) -> None:

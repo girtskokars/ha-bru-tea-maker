@@ -1,0 +1,35 @@
+brew:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: bru_tea_maker
+    preset:
+      example: GREEN TEA
+      selector:
+        text:
+    temperature:
+      selector:
+        number:
+          min: 40
+          max: 100
+          step: 5
+          unit_of_measurement: "°C"
+          mode: slider
+    water_amount:
+      selector:
+        number:
+          min: 50
+          max: 500
+          step: 50
+          unit_of_measurement: ml
+          mode: slider
+    brew_time:
+      selector:
+        number:
+          min: 10
+          max: 600
+          step: 10
+          unit_of_measurement: s
+          mode: slider

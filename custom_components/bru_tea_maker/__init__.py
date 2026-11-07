@@ -2,10 +2,22 @@
 
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.typing import ConfigType
 
+from .const import DOMAIN
 from .coordinator import BruConfigEntry, BruCoordinator
+from .services import async_setup_services
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS = [Platform.BUTTON, Platform.NUMBER, Platform.SELECT, Platform.SENSOR]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the actions."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: BruConfigEntry) -> bool:

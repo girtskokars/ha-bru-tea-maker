@@ -61,6 +61,35 @@ The brew settings live in Home Assistant, so they can be changed even while
 the tea maker is out of range. A value between steps, such as 92 °C, is
 rounded to the nearest one the tea maker accepts.
 
+## Actions
+
+**BRU Tea Maker: Brew** (`bru_tea_maker.brew`) starts a brew in one step,
+without changing the settings shown in Home Assistant. It uses a preset, or
+the current settings when no preset is given, and any of the values given
+override it.
+
+```yaml
+automation:
+  - alias: Morning tea
+    triggers:
+      - trigger: time
+        at: "07:00:00"
+    actions:
+      - action: bru_tea_maker.brew
+        data:
+          device_id: YOUR_DEVICE_ID
+          preset: GREEN TEA
+          water_amount: 300
+```
+
+| Field | Description |
+| --- | --- |
+| `device_id` | The tea maker. Required. |
+| `preset` | Name of one of the tea maker's presets, as shown in the Preset select. |
+| `temperature` | Water temperature, 40–100 °C. 40 °C is **Cold**. |
+| `water_amount` | Water quantity, 50–500 ml. |
+| `brew_time` | Steeping time, 10–600 seconds. |
+
 ## Troubleshooting
 
 - **Pairing failed.** The setup dialog says what went wrong and lets you try

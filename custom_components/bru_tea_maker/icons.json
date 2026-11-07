@@ -47,5 +47,10 @@
         }
       }
     }
+  },
+  "services": {
+    "brew": {
+      "service": "mdi:tea"
+    }
   }
 }
