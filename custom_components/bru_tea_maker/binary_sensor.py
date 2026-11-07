@@ -16,6 +16,9 @@ from .coordinator import BruConfigEntry, BruCoordinator
 from .entity import BruEntity
 from .protocol import BruStatus
 
+# Coordinator entities: updates need no limit.
+PARALLEL_UPDATES = 0
+
 
 @dataclass(frozen=True, kw_only=True)
 class BruBinarySensorDescription(BinarySensorEntityDescription):

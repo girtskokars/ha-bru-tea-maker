@@ -9,6 +9,9 @@ from .const import PRESET_CUSTOM
 from .coordinator import BruConfigEntry
 from .entity import BruEntity
 
+# The settings live in Home Assistant: no limit needed.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

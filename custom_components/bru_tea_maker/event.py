@@ -8,6 +8,9 @@ from .const import ACTIVE_BREW_PHASES, ALERT_STATUSES, SERVED_PHASES
 from .coordinator import BruConfigEntry
 from .entity import BruEntity
 
+# Coordinator entities: updates need no limit.
+PARALLEL_UPDATES = 0
+
 EVENT_STARTED = "started"
 EVENT_FINISHED = "finished"
 EVENT_TYPES = [EVENT_STARTED, EVENT_FINISHED]

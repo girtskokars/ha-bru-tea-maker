@@ -43,7 +43,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: BruConfigEntry) -> bool:
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_stop)
     )
     # Not used to mark the tea maker unavailable: it may stop advertising
-    # while it is connected.
+    # while it is connected. Only changed advertisements arrive here, so this
+    # mostly helps once the tea maker was gone long enough to be forgotten;
+    # polling keeps retrying meanwhile. Clearing the advertisement history
+    # would let every one through, but would also hide the tea maker from the
+    # immediate reconnect until it advertises again.
     entry.async_on_unload(
         bluetooth.async_register_callback(
             hass,
@@ -61,7 +65,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: BruConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: BruConfigEntry) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        # Offer the tea maker again once its entry is removed, without a
+        # restart. A discovery for an entry that is still there just aborts.
+        bluetooth.async_rediscover_address(hass, entry.runtime_data.address)
+    return unload_ok
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: BruConfigEntry) -> None:

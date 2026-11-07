@@ -8,6 +8,9 @@ from .const import BREW_PHASES, MESSAGE_NONE, MESSAGES, STATUS_NAMES
 from .coordinator import BruConfigEntry, BruCoordinator
 from .entity import BruEntity
 
+# Coordinator entities: updates need no limit.
+PARALLEL_UPDATES = 0
+
 # Sensor key (a field of BruStatus) -> the states it can have.
 SENSORS = {
     "status": sorted({*STATUS_NAMES.values(), *BREW_PHASES.values()}),

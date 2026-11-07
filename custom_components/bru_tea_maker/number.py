@@ -13,6 +13,9 @@ from .coordinator import BruConfigEntry, BruCoordinator
 from .entity import BruEntity
 from .protocol import SETTING_RANGES, snap_setting
 
+# The settings live in Home Assistant: no limit needed.
+PARALLEL_UPDATES = 0
+
 _UNITS = {
     "temperature": UnitOfTemperature.CELSIUS,
     "water_amount": UnitOfVolume.MILLILITERS,

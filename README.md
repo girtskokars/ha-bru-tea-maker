@@ -199,9 +199,9 @@ Assistant.
   cannot reach the tea maker: close the app or turn off the phone's
   Bluetooth.
 - **Entities go unavailable.** Home Assistant shows the tea maker as
-  unavailable when the connection drops, and tries to reconnect right away
-  and whenever it hears from the tea maker. When the tea maker loses power,
-  it takes about 10 seconds to notice.
+  unavailable when the connection drops, tries to reconnect right away, and
+  keeps retrying every 5 seconds. When the tea maker loses power, it takes
+  about 10 seconds to notice.
 - **"No free connections" through a proxy.** Each proxy has a limited number
   of connections, and Home Assistant keeps one open to the tea maker. Raise
   `max_connections` in the proxy's `esp32_ble` configuration (see

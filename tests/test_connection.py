@@ -166,3 +166,18 @@ async def test_advertisement_callback_registered(
     unregister = register.return_value
     assert await hass.config_entries.async_unload(config_entry.entry_id)
     unregister.assert_called_once()
+
+
+async def test_unload_offers_the_tea_maker_again(
+    hass: HomeAssistant,
+    enable_bluetooth: None,
+    fake_bru: FakeBru,
+    config_entry: MockConfigEntry,
+) -> None:
+    """After unloading, the tea maker can be discovered again without a restart."""
+    await _setup(hass, config_entry)
+    with patch(
+        "custom_components.bru_tea_maker.bluetooth.async_rediscover_address"
+    ) as rediscover:
+        assert await hass.config_entries.async_unload(config_entry.entry_id)
+    rediscover.assert_called_once_with(hass, ADDRESS)

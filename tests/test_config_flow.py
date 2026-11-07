@@ -179,6 +179,22 @@ async def test_no_devices_searches_again(hass: HomeAssistant) -> None:
     assert result["step_id"] == "user"
 
 
+async def test_tea_maker_gone_before_pairing(
+    hass: HomeAssistant, fake_pairing: type[FakePairing]
+) -> None:
+    """A tea maker that is out of range by the time it is chosen aborts."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    with patch(f"{FLOW}.async_ble_device_from_address", return_value=None):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_ADDRESS: ADDRESS}
+        )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "cannot_connect"
+    assert not fake_pairing.instances
+
+
 async def test_update_mode_is_not_offered(hass: HomeAssistant) -> None:
     """The address a tea maker uses while updating its firmware is skipped."""
     update_mode = service_info(name="BRU_U", address="F4:14:14:22:E7:40")

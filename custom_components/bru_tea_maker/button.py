@@ -8,6 +8,9 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .coordinator import BruConfigEntry
 from .entity import BruEntity
 
+# One command at a time, as the tea maker takes them.
+PARALLEL_UPDATES = 1
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
