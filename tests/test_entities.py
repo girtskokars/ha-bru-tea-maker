@@ -10,7 +10,7 @@ from pytest_homeassistant_custom_component.common import (
     mock_restore_cache_with_extra_data,
 )
 
-from .conftest import FakeBru
+from .conftest import SETUP_REPLY, FakeBru, preset_frame
 
 
 async def _setup(hass: HomeAssistant, entry: MockConfigEntry) -> None:
@@ -159,3 +159,65 @@ async def test_typed_and_restored_values_snap(
         "number", "set_value", {"entity_id": quantity, "value": 275}, blocking=True
     )
     assert hass.states.get(quantity).state == "300"
+
+
+async def test_duplicate_preset_names(
+    hass: HomeAssistant,
+    enable_bluetooth: None,
+    fake_bru: FakeBru,
+    config_entry: MockConfigEntry,
+) -> None:
+    """Presets with the same name, or called "custom", each get an option."""
+    fake_bru.presets[2] = preset_frame(2, "GREEN TEA")
+    fake_bru.presets[3] = preset_frame(3, "custom")
+    await _setup(hass, config_entry)
+    select = "select.bru_tea_maker_preset"
+    assert hass.states.get(select).attributes["options"] == [
+        "GREEN TEA",
+        "GREEN TEA (2)",
+        "custom (3)",
+        "custom",
+    ]
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": select, "option": "custom (3)"},
+        blocking=True,
+    )
+    assert hass.states.get(select).state == "custom (3)"
+
+
+async def test_presets_retried_on_next_poll(
+    hass: HomeAssistant,
+    enable_bluetooth: None,
+    fake_bru: FakeBru,
+    config_entry: MockConfigEntry,
+) -> None:
+    """Without presets the select is unavailable until a retry reads them."""
+    fake_bru.setup_reply = bytes.fromhex("ff082b00010000f7")  # No presets.
+    await _setup(hass, config_entry)
+    select = "select.bru_tea_maker_preset"
+    assert hass.states.get(select).state == STATE_UNAVAILABLE
+
+    fake_bru.setup_reply = SETUP_REPLY
+    await config_entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(select).state == "custom"
+    assert len(hass.states.get(select).attributes["options"]) == 4
+
+
+async def test_presets_retried_once(
+    hass: HomeAssistant,
+    enable_bluetooth: None,
+    fake_bru: FakeBru,
+    config_entry: MockConfigEntry,
+) -> None:
+    """After one failed retry, reading waits for Sync presets."""
+    fake_bru.setup_reply = bytes.fromhex("ff082b00010000f7")
+    await _setup(hass, config_entry)
+    coordinator = config_entry.runtime_data
+    for _ in range(3):
+        await coordinator.async_refresh()
+    setups = [frame for frame in fake_bru.written if frame[2] == 0x2A]
+    assert len(setups) == 2
+    assert hass.states.get("select.bru_tea_maker_preset").state == STATE_UNAVAILABLE

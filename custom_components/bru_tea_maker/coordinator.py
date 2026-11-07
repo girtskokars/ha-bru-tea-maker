@@ -33,6 +33,7 @@ from .const import (
     FIRMWARE_UUID,
     HARDWARE_UUID,
     LOGGER,
+    PRESET_CUSTOM,
     STANDBY_UPDATE_INTERVAL,
     STATUS_BREWING,
     STATUS_UUID,
@@ -101,6 +102,7 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         self._request_lock = asyncio.Lock()
         self._reply: tuple[int, asyncio.Future[bytes]] | None = None
         self._missed_poll = False
+        self._presets_missing = False
         self.firmware: str | None = None
         self.hardware: str | None = None
         self.serial_number: str | None = None
@@ -203,6 +205,9 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         return self._client is not None and self._client.is_connected
 
     async def _async_update_data(self) -> BruStatus:
+        # Presets that failed at connect time are retried on the poll after,
+        # not straight after the failure.
+        retry_presets = self._presets_missing
         try:
             if not self.connected:
                 # Until the tea maker answers again, retry at the slow pace.
@@ -233,6 +238,8 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         self.update_interval = (
             AWAKE_UPDATE_INTERVAL if status.awake else STANDBY_UPDATE_INTERVAL
         )
+        if retry_presets and self._presets_missing:
+            await self._retry_presets()
         return status
 
     async def _connect(self) -> None:
@@ -295,7 +302,8 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         try:
             await self._read_presets()
         except (TimeoutError, ValueError) as err:
-            LOGGER.warning("Could not read the presets from the tea maker: %r", err)
+            LOGGER.debug("Reading the presets failed, retrying on next poll: %r", err)
+            self._presets_missing = True
 
     async def _disconnect(self) -> None:
         self._missed_poll = False
@@ -359,13 +367,33 @@ class BruCoordinator(DataUpdateCoordinator[BruStatus]):
         time = dt_util.utcnow().isoformat(timespec="milliseconds")
         self.frames.append(f"{time} {direction} {frame.hex()}")
 
+    async def _retry_presets(self) -> None:
+        """Read the presets once more after they failed at connect time."""
+        self._presets_missing = False
+        try:
+            await self._read_presets()
+        except (BleakError, TimeoutError, ValueError) as err:
+            LOGGER.warning(
+                "Could not read the presets from the tea maker: %r. Press "
+                "Sync presets to try again",
+                err,
+            )
+            return
+        # The status may not have changed, so tell the select itself.
+        self.async_update_listeners()
+
     async def _read_presets(self) -> None:
         count = parse_preset_count(await self._request(OP_SETUP))
-        presets = [
-            parse_preset(await self._request(OP_PRESET, bytes([slot])))
-            for slot in range(1, count + 1)
-        ]
-        self.presets = {preset.name: preset for preset in presets}
+        presets: dict[str, BruPreset] = {}
+        for slot in range(1, count + 1):
+            preset = parse_preset(await self._request(OP_PRESET, bytes([slot])))
+            # Each preset needs its own option, and "custom" is taken.
+            name = preset.name
+            if name in presets or name == PRESET_CUSTOM:
+                name = f"{name} ({preset.slot})"
+            presets[name] = preset
+        self.presets = presets
+        self._presets_missing = False
         if self.preset not in self.presets:
             self.preset = None
 

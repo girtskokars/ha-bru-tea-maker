@@ -44,6 +44,12 @@ def status_frame(code: int, sub_code: int) -> bytes:
     return build_frame(0x45, bytes([code, sub_code, 0x12, 0x34, 0x56, 0x78]))
 
 
+def preset_frame(slot: int, name: str) -> bytes:
+    """Return BRU's reply for a preset called ``name`` in ``slot``."""
+    text = name.encode("utf-16-le").ljust(48, b"\0")
+    return build_frame(0x51, bytes([slot, 0x0B, 0x08, 0x04]) + text)
+
+
 START_ACCEPTED = bytes.fromhex("ff05410081")
 START_REFUSED = bytes.fromhex("ff05410180")
 # Start frame lengths: 160626-2 takes only the short frame, 061026-1 only
@@ -98,6 +104,8 @@ class FakeBru:
         self.connected = True
         self.reachable = True
         self.start_frames = {SHORT_START}
+        self.setup_reply = SETUP_REPLY
+        self.presets = dict(PRESET_REPLIES)
         self.device_information = {FIRMWARE_UUID: b"061026-1", HARDWARE_UUID: b"V1.0.1"}
         self.pair_error: BaseException | None = None
         self._notify: Callable[[Any, bytearray], None] | None = None
@@ -137,9 +145,9 @@ class FakeBru:
             case 0x44:
                 return self.status
             case 0x2A:
-                return SETUP_REPLY
+                return self.setup_reply
             case 0x50:
-                return PRESET_REPLIES[command[3]]
+                return self.presets[command[3]]
             case 0x40:
                 accepted = len(command) in self.start_frames
                 return START_ACCEPTED if accepted else START_REFUSED

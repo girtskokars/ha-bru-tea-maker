@@ -5,11 +5,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
+from .const import PRESET_CUSTOM
 from .coordinator import BruConfigEntry
 from .entity import BruEntity
-
-# Shown while the brew settings do not come from one of the presets.
-PRESET_CUSTOM = "custom"
 
 
 async def async_setup_entry(
@@ -30,6 +28,11 @@ class BruPresetSelect(BruEntity, SelectEntity, RestoreEntity):
         last = await self.async_get_last_state()
         if last is not None and last.state in self.coordinator.presets:
             self.coordinator.preset = last.state
+
+    @property
+    def available(self) -> bool:
+        """Return whether the presets have been read from the tea maker."""
+        return super().available and bool(self.coordinator.presets)
 
     @property
     def options(self) -> list[str]:

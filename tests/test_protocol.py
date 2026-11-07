@@ -124,9 +124,9 @@ def test_parse_preset_count() -> None:
 def test_parse_presets() -> None:
     """The captured presets decode to what the tea maker shows."""
     assert [parse_preset(frame) for frame in PRESET_REPLIES.values()] == [
-        BruPreset("GREEN TEA", temperature=80, water_amount=250, brew_time=120),
-        BruPreset("BLACK TEA", temperature=95, water_amount=250, brew_time=300),
-        BruPreset("HERBAL TEA", temperature=90, water_amount=250, brew_time=300),
+        BruPreset(1, "GREEN TEA", temperature=80, water_amount=250, brew_time=120),
+        BruPreset(2, "BLACK TEA", temperature=95, water_amount=250, brew_time=300),
+        BruPreset(3, "HERBAL TEA", temperature=90, water_amount=250, brew_time=300),
     ]
 
 

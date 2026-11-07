@@ -52,6 +52,7 @@ class BruStatus:
 class BruPreset:
     """One of the presets stored on the tea maker."""
 
+    slot: int
     name: str
     temperature: int
     water_amount: int
@@ -170,6 +171,7 @@ def parse_preset(frame: bytes) -> BruPreset:
         .strip()
     )
     return BruPreset(
+        slot=slot,
         name=text or f"Preset {slot}",
         temperature=temperature * 5 + 40,
         water_amount=(water_amount + 1) * 50,
