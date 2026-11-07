@@ -105,3 +105,11 @@ ATTENTION_MESSAGES = {
     "error",
     "check_engine",
 }
+# Statuses that show a prompt or a fault on the screen.
+ALERT_STATUSES = {"warning_message", "error_message"}
+# Brew phases in which the tea maker is working, so not "enjoy".
+ACTIVE_BREW_PHASES = set(BREW_PHASES.values()) - {"enjoy"}
+# Phases after the tea has reached the cup. A brew that leaves one of them
+# without passing through "enjoy", which shows for only about 3 s, still
+# finished.
+SERVED_PHASES = {"serving", "rinse_delay", "rinsing"}

@@ -55,12 +55,41 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "brewing": {
+        "name": "Brewing",
+        "state": {
+          "on": "Brewing",
+          "off": "Not brewing"
+        }
+      },
+      "needs_attention": {
+        "name": "Needs attention",
+        "state": {
+          "on": "Yes",
+          "off": "No"
+        }
+      }
+    },
     "button": {
       "start_brew": {
         "name": "Brew"
       },
       "sync_presets": {
         "name": "Sync presets"
+      }
+    },
+    "event": {
+      "brew": {
+        "name": "Brew progress",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started": "Started",
+              "finished": "Finished"
+            }
+          }
+        }
       }
     },
     "number": {

@@ -1,11 +1,30 @@
 {
   "entity": {
+    "binary_sensor": {
+      "brewing": {
+        "default": "mdi:kettle",
+        "state": {
+          "on": "mdi:kettle-steam"
+        }
+      },
+      "needs_attention": {
+        "default": "mdi:check-circle-outline",
+        "state": {
+          "on": "mdi:alert-circle"
+        }
+      }
+    },
     "button": {
       "start_brew": {
         "default": "mdi:tea"
       },
       "sync_presets": {
         "default": "mdi:sync"
+      }
+    },
+    "event": {
+      "brew": {
+        "default": "mdi:tea"
       }
     },
     "number": {

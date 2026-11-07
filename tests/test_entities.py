@@ -40,6 +40,9 @@ async def test_names_and_main_entity(
         "preset": "BRU Tea Maker Preset",
         "start_brew": "BRU Tea Maker Brew",
         "sync_presets": "BRU Tea Maker Sync presets",
+        "brewing": "BRU Tea Maker Brewing",
+        "needs_attention": "BRU Tea Maker Needs attention",
+        "brew": "BRU Tea Maker Brew progress",
     }
     assert hass.states.get("sensor.bru_tea_maker").state == "standby"
 

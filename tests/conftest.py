@@ -10,6 +10,7 @@ from bleak.exc import BleakError
 import pytest
 
 from custom_components.bru_tea_maker.const import DOMAIN, FIRMWARE_UUID, HARDWARE_UUID
+from custom_components.bru_tea_maker.protocol import build_frame
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
@@ -36,6 +37,13 @@ PRESET_REPLIES = {
         "00000000000000000000000000000000000000000000000000000098"
     ),
 }
+
+
+def status_frame(code: int, sub_code: int) -> bytes:
+    """Return BRU's status reply for ``code`` / ``sub_code``."""
+    return build_frame(0x45, bytes([code, sub_code, 0x12, 0x34, 0x56, 0x78]))
+
+
 START_ACCEPTED = bytes.fromhex("ff05410081")
 START_REFUSED = bytes.fromhex("ff05410180")
 # Start frame lengths: 160626-2 takes only the short frame, 061026-1 only
