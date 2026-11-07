@@ -27,6 +27,8 @@ STATUS_BREWING = 5
 
 # First status byte.
 STATUS_NAMES = {
+    # For about 2 s while waking up, between standby and the menu (0/3).
+    0: "starting",
     1: "standby",
     2: "function_menu",
     3: "machine_setup",
@@ -89,6 +91,7 @@ BREWING_STATUSES = {*BREW_PHASES.values(), "brewing", "dispensing"}
 # Statuses in which the tea maker does not start a new brew.
 BUSY_STATUSES = {
     *BREWING_STATUSES,
+    "starting",
     "machine_setup",
     "test_mode",
     "drying",

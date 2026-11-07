@@ -114,6 +114,7 @@
     "sensor": {
       "status": {
         "state": {
+          "starting": "Starting",
           "standby": "Standby",
           "function_menu": "Ready",
           "machine_setup": "In settings",
